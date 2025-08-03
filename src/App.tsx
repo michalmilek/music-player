@@ -12,7 +12,9 @@ import {
   Trash2,
   RotateCcw,
   RotateCw,
-  Settings
+  Settings,
+  HelpCircle,
+  X
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 
@@ -52,6 +54,7 @@ function App() {
   const [playHistory, setPlayHistory] = useState<PlayHistoryEntry[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [skipAmount, setSkipAmount] = useState(10);
+  const [showHelp, setShowHelp] = useState(false);
 
   // Load data from localStorage on app start
   useEffect(() => {
@@ -318,6 +321,74 @@ function App() {
     }
   }, [isDragging, currentTime]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts when typing in input fields
+      if ((e.target as HTMLElement).tagName === 'INPUT') return;
+
+      switch (e.code) {
+        case 'Space':
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          if (e.shiftKey) {
+            skipBackward(skipAmount);
+          } else {
+            skipBackward(10);
+          }
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          if (e.shiftKey) {
+            skipForward(skipAmount);
+          } else {
+            skipForward(10);
+          }
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          handleVolumeChange(Math.min(100, volume + 5));
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          handleVolumeChange(Math.max(0, volume - 5));
+          break;
+        case 'KeyN':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            nextSong();
+          }
+          break;
+        case 'KeyP':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            previousSong();
+          }
+          break;
+        case 'KeyM':
+          e.preventDefault();
+          handleVolumeChange(volume === 0 ? 50 : 0); // Mute/unmute
+          break;
+        case 'KeyH':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            setShowHelp(true);
+          }
+          break;
+        case 'Escape':
+          e.preventDefault();
+          setShowHelp(false);
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isPlaying, volume, skipAmount, currentSong, playlist]);
+
   // Update current time periodically (but not while dragging)
   useEffect(() => {
     if (!isPlaying || isDragging) return;
@@ -336,10 +407,19 @@ function App() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="border-b p-4">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Music className="w-6 h-6" />
-          Tauri Music Player
-        </h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Music className="w-6 h-6" />
+            Tauri Music Player
+          </h1>
+          <button
+            onClick={() => setShowHelp(true)}
+            className="p-2 rounded-md hover:bg-muted transition-colors"
+            title="Keyboard shortcuts (Ctrl+H)"
+          >
+            <HelpCircle className="w-5 h-5" />
+          </button>
+        </div>
       </header>
 
       {/* Main content */}
@@ -651,6 +731,73 @@ function App() {
           </div>
         </main>
       </div>
+
+      {/* Help overlay */}
+      {showHelp && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background border rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Keyboard Shortcuts</h2>
+              <button
+                onClick={() => setShowHelp(false)}
+                className="p-1 rounded-md hover:bg-muted transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Play/Pause</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs">Space</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Skip backward 10s</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs">←</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Skip forward 10s</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs">→</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Skip backward (custom)</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs">Shift + ←</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Skip forward (custom)</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs">Shift + →</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Volume up</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs">↑</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Volume down</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs">↓</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Mute/Unmute</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs">M</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Previous song</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl + P</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Next song</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl + N</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Show this help</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl + H</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Close help</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs">Esc</kbd>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
