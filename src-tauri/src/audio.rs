@@ -28,6 +28,21 @@ pub struct TrackInfo {
     pub is_playing: bool,
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct TrackMetadata {
+    pub title: Option<String>,
+    pub artist: Option<String>,
+    pub album: Option<String>,
+    pub track_number: Option<u32>,
+    pub year: Option<u32>,
+    pub genre: Option<String>,
+    pub duration: f64,
+    pub codec: Option<String>,
+    pub sample_rate: Option<u32>,
+    pub channels: Option<String>,
+    pub bits_per_sample: Option<u32>,
+}
+
 pub struct AudioPlayer {
     command_sender: Sender<PlayerCommand>,
     track_info: Arc<Mutex<TrackInfo>>,
@@ -190,8 +205,8 @@ impl AudioPlayer {
     }
 
     fn create_sink_from_file_at_position(
-        file_path: &str,
-        stream_handle: &OutputStreamHandle,
+        _file_path: &str,
+        _stream_handle: &OutputStreamHandle,
         _position: f64,
     ) -> Result<Sink, String> {
         // Seeking is very complex with symphonia + rodio
@@ -241,5 +256,121 @@ impl AudioPlayer {
 
     pub fn is_playing(&self) -> bool {
         self.track_info.lock().unwrap().is_playing
+    }
+
+    pub fn get_track_metadata(file_path: &str) -> Result<TrackMetadata, String> {
+        let file = File::open(file_path).map_err(|e| format!("Failed to open file: {}", e))?;
+        let mss = MediaSourceStream::new(Box::new(file), Default::default());
+
+        let mut hint = Hint::new();
+        if let Some(extension) = Path::new(file_path).extension() {
+            if let Some(ext_str) = extension.to_str() {
+                hint.with_extension(ext_str);
+            }
+        }
+
+        let meta_opts: MetadataOptions = Default::default();
+        let fmt_opts: FormatOptions = Default::default();
+
+        let probed = symphonia::default::get_probe()
+            .format(&hint, mss, &fmt_opts, &meta_opts)
+            .map_err(|e| format!("Failed to probe format: {}", e))?;
+
+        let mut metadata = TrackMetadata {
+            title: None,
+            artist: None,
+            album: None,
+            track_number: None,
+            year: None,
+            genre: None,
+            duration: 0.0,
+            codec: None,
+            sample_rate: None,
+            channels: None,
+            bits_per_sample: None,
+        };
+
+        // Get duration
+        let mut format = probed.format;
+        let track = format
+            .tracks()
+            .iter()
+            .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
+            .ok_or("No suitable audio track found")?;
+
+        // Set technical information
+        metadata.codec = Some(format!("{:?}", track.codec_params.codec));
+        metadata.sample_rate = track.codec_params.sample_rate;
+        metadata.channels = track.codec_params.channels.map(|ch| format!("{:?}", ch));
+        metadata.bits_per_sample = track.codec_params.bits_per_sample;
+
+        // Print technical information
+        println!("Audio file technical info:");
+        println!("- Codec: {:?}", track.codec_params.codec);
+        println!("- Sample rate: {:?}", track.codec_params.sample_rate);
+        println!("- Channels: {:?}", track.codec_params.channels);
+        println!("- Bits per sample: {:?}", track.codec_params.bits_per_sample);
+        println!("- N frames: {:?}", track.codec_params.n_frames);
+
+        if let Some(n_frames) = track.codec_params.n_frames {
+            if let Some(sample_rate) = track.codec_params.sample_rate {
+                metadata.duration = n_frames as f64 / sample_rate as f64;
+            }
+        }
+
+        // Get metadata from tags
+        if let Some(metadata_rev) = format.metadata().current() {
+            println!("Found {} tags", metadata_rev.tags().len());
+            for tag in metadata_rev.tags() {
+                println!("Tag: '{}' = '{}'", tag.key, tag.value);
+                match tag.key.as_str() {
+                    "TITLE" | "TIT2" => {
+                        metadata.title = Some(tag.value.to_string());
+                        println!("Set title: {}", tag.value);
+                    },
+                    "ARTIST" | "TPE1" => {
+                        metadata.artist = Some(tag.value.to_string());
+                        println!("Set artist: {}", tag.value);
+                    },
+                    "ALBUM" | "TALB" => {
+                        metadata.album = Some(tag.value.to_string());
+                        println!("Set album: {}", tag.value);
+                    },
+                    "TRACKNUMBER" | "TRCK" => {
+                        if let Ok(track_num) = tag.value.to_string().parse::<u32>() {
+                            metadata.track_number = Some(track_num);
+                            println!("Set track number: {}", track_num);
+                        }
+                    },
+                    "DATE" | "TYER" | "TDRC" => {
+                        let year_str = tag.value.to_string();
+                        if let Some(year_part) = year_str.split('-').next() {
+                            if let Ok(year) = year_part.parse::<u32>() {
+                                metadata.year = Some(year);
+                                println!("Set year: {}", year);
+                            }
+                        }
+                    },
+                    "GENRE" | "TCON" => {
+                        metadata.genre = Some(tag.value.to_string());
+                        println!("Set genre: {}", tag.value);
+                    },
+                    _ => {}
+                }
+            }
+        } else {
+            println!("No metadata found");
+        }
+
+        // Fallback: extract filename as title if no title tag found
+        if metadata.title.is_none() {
+            if let Some(filename) = Path::new(file_path).file_stem() {
+                if let Some(name) = filename.to_str() {
+                    metadata.title = Some(name.to_string());
+                }
+            }
+        }
+
+        Ok(metadata)
     }
 }

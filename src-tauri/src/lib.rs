@@ -1,6 +1,6 @@
 mod audio;
 
-use audio::AudioPlayer;
+use audio::{AudioPlayer, TrackMetadata};
 use std::sync::{Arc, Mutex};
 use tauri::State;
 
@@ -62,6 +62,11 @@ fn get_song_info(state: State<AppState>) -> Result<(f32, f32), String> {
     Ok((current_time, duration))
 }
 
+#[tauri::command]
+fn get_track_metadata(path: String) -> Result<TrackMetadata, String> {
+    AudioPlayer::get_track_metadata(&path)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let player = AudioPlayer::new().expect("Failed to initialize audio player");
@@ -81,7 +86,8 @@ pub fn run() {
             set_volume,
             seek,
             get_current_time,
-            get_song_info
+            get_song_info,
+            get_track_metadata
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { 
@@ -10,13 +10,26 @@ import {
   FolderOpen,
   Music
 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
+
+interface TrackMetadata {
+  title: string | null;
+  artist: string | null;
+  album: string | null;
+  track_number: number | null;
+  year: number | null;
+  genre: string | null;
+  duration: number;
+  codec: string | null;
+  sample_rate: number | null;
+  channels: string | null;
+  bits_per_sample: number | null;
+}
 
 interface Song {
   path: string;
   name: string;
-  artist?: string;
-  album?: string;
-  duration?: number;
+  metadata?: TrackMetadata;
 }
 
 function App() {
@@ -37,10 +50,25 @@ function App() {
     });
     
     if (selected && Array.isArray(selected)) {
-      const songs: Song[] = selected.map(path => ({
-        path,
-        name: path.split('/').pop() || path
-      }));
+      const songs: Song[] = [];
+      
+      for (const path of selected) {
+        try {
+          const metadata = await invoke<TrackMetadata>("get_track_metadata", { path });
+          songs.push({
+            path,
+            name: metadata.title || path.split('/').pop() || path,
+            metadata
+          });
+        } catch (error) {
+          console.error("Failed to get metadata for", path, error);
+          songs.push({
+            path,
+            name: path.split('/').pop() || path
+          });
+        }
+      }
+      
       setPlaylist([...playlist, ...songs]);
     }
   };
@@ -50,7 +78,7 @@ function App() {
       setCurrentSong(song);
       const songDuration = await invoke<number>("play_song", { path: song.path });
       console.log("Song duration:", songDuration);
-      setDuration(songDuration);
+      setDuration(song.metadata?.duration || songDuration);
       setCurrentTime(0);
       setIsPlaying(true);
     } catch (error) {
@@ -94,15 +122,6 @@ function App() {
       await invoke("set_volume", { volume: newVolume / 100 });
     } catch (error) {
       console.error("Failed to set volume:", error);
-    }
-  };
-
-  const handleSeek = async (newTime: number) => {
-    setCurrentTime(newTime);
-    try {
-      await invoke("seek", { position: newTime });
-    } catch (error) {
-      console.error("Failed to seek:", error);
     }
   };
 
@@ -163,9 +182,22 @@ function App() {
               >
                 <div className="flex items-center gap-3">
                   <span className="text-muted-foreground text-sm w-6 text-center">
-                    {index + 1}
+                    {song.metadata?.track_number || index + 1}
                   </span>
-                  <span className="flex-1 truncate">{song.name}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate font-medium">{song.name}</div>
+                    {song.metadata?.artist && (
+                      <div className="text-sm text-muted-foreground truncate">
+                        {song.metadata.artist}
+                        {song.metadata.album && ` • ${song.metadata.album}`}
+                      </div>
+                    )}
+                  </div>
+                  {song.metadata?.duration && (
+                    <span className="text-sm text-muted-foreground">
+                      {formatTime(song.metadata.duration)}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
@@ -174,16 +206,87 @@ function App() {
 
         {/* Now Playing */}
         <main className="flex-1 flex flex-col">
-          <div className="flex-1 flex items-center justify-center p-8">
-            <div className="text-center">
-              <div className="w-64 h-64 bg-muted rounded-lg flex items-center justify-center mb-8">
-                <Music className="w-32 h-32 text-muted-foreground" />
+          <div className="flex-1 p-8">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-8">
+                <div className="w-64 h-64 bg-muted rounded-lg flex items-center justify-center mb-6 mx-auto">
+                  <Music className="w-32 h-32 text-muted-foreground" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2">
+                  {currentSong?.metadata?.title || currentSong?.name || 'No song playing'}
+                </h2>
+                {currentSong?.metadata?.artist && (
+                  <p className="text-lg text-muted-foreground">
+                    {currentSong.metadata.artist}
+                  </p>
+                )}
               </div>
-              <h2 className="text-2xl font-bold mb-2">
-                {currentSong?.name || 'No song playing'}
-              </h2>
-              {currentSong?.artist && (
-                <p className="text-muted-foreground">{currentSong.artist}</p>
+
+              {currentSong && (
+                <Tabs defaultValue="metadata" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="metadata">Metadata</TabsTrigger>
+                    <TabsTrigger value="technical">Technical Info</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="metadata" className="mt-6">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-3">
+                        <div>
+                          <span className="font-medium text-muted-foreground">Title:</span>
+                          <p className="mt-1">{currentSong.metadata?.title || 'Unknown'}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Artist:</span>
+                          <p className="mt-1">{currentSong.metadata?.artist || 'Unknown'}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Album:</span>
+                          <p className="mt-1">{currentSong.metadata?.album || 'Unknown'}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <span className="font-medium text-muted-foreground">Track Number:</span>
+                          <p className="mt-1">{currentSong.metadata?.track_number || 'Unknown'}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Year:</span>
+                          <p className="mt-1">{currentSong.metadata?.year || 'Unknown'}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Genre:</span>
+                          <p className="mt-1">{currentSong.metadata?.genre || 'Unknown'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="technical" className="mt-6">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-3">
+                        <div>
+                          <span className="font-medium text-muted-foreground">Codec:</span>
+                          <p className="mt-1">{currentSong.metadata?.codec || 'Unknown'}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Sample Rate:</span>
+                          <p className="mt-1">{currentSong.metadata?.sample_rate ? `${currentSong.metadata.sample_rate} Hz` : 'Unknown'}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <span className="font-medium text-muted-foreground">Channels:</span>
+                          <p className="mt-1">{currentSong.metadata?.channels || 'Unknown'}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Bits per Sample:</span>
+                          <p className="mt-1">{currentSong.metadata?.bits_per_sample || 'Unknown'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               )}
             </div>
           </div>
