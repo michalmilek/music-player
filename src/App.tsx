@@ -81,6 +81,9 @@ function App() {
       setDuration(song.metadata?.duration || songDuration);
       setCurrentTime(0);
       setIsPlaying(true);
+      
+      // Apply current volume to new song
+      await invoke("set_volume", { volume: volume / 100 });
     } catch (error) {
       console.error("Failed to play song:", error);
       setIsPlaying(false);
