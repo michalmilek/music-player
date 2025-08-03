@@ -9,7 +9,10 @@ import {
   Volume2,
   FolderOpen,
   Music,
-  Trash2
+  Trash2,
+  RotateCcw,
+  RotateCw,
+  Settings
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 
@@ -48,12 +51,14 @@ function App() {
   const [duration, setDuration] = useState(0);
   const [playHistory, setPlayHistory] = useState<PlayHistoryEntry[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [skipAmount, setSkipAmount] = useState(10);
 
   // Load data from localStorage on app start
   useEffect(() => {
     const savedPlaylist = localStorage.getItem('musicPlayerPlaylist');
     const savedHistory = localStorage.getItem('musicPlayerHistory');
     const savedVolume = localStorage.getItem('musicPlayerVolume');
+    const savedSkipAmount = localStorage.getItem('musicPlayerSkipAmount');
 
     if (savedPlaylist) {
       try {
@@ -74,6 +79,10 @@ function App() {
     if (savedVolume) {
       setVolume(parseInt(savedVolume));
     }
+
+    if (savedSkipAmount) {
+      setSkipAmount(parseInt(savedSkipAmount));
+    }
   }, []);
 
   // Save playlist to localStorage when it changes
@@ -90,6 +99,11 @@ function App() {
   useEffect(() => {
     localStorage.setItem('musicPlayerVolume', volume.toString());
   }, [volume]);
+
+  // Save skip amount to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('musicPlayerSkipAmount', skipAmount.toString());
+  }, [skipAmount]);
 
   const addToHistory = (song: Song) => {
     setPlayHistory(prev => {
@@ -209,6 +223,28 @@ function App() {
       await invoke("set_volume", { volume: newVolume / 100 });
     } catch (error) {
       console.error("Failed to set volume:", error);
+    }
+  };
+
+  const skipBackward = async (seconds: number = 10) => {
+    if (!currentSong) return;
+    const newTime = Math.max(0, currentTime - seconds);
+    setCurrentTime(newTime);
+    try {
+      await invoke("seek", { position: newTime });
+    } catch (error) {
+      console.warn("Skip backward failed:", error);
+    }
+  };
+
+  const skipForward = async (seconds: number = 10) => {
+    if (!currentSong) return;
+    const newTime = Math.min(duration, currentTime + seconds);
+    setCurrentTime(newTime);
+    try {
+      await invoke("seek", { position: newTime });
+    } catch (error) {
+      console.warn("Skip forward failed:", error);
     }
   };
 
@@ -526,8 +562,17 @@ function App() {
               <button
                 onClick={previousSong}
                 className="p-2 rounded-md hover:bg-muted transition-colors"
+                title="Previous song"
               >
                 <SkipBack className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => skipBackward(10)}
+                disabled={!currentSong}
+                className="p-2 rounded-md hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Skip backward 10s"
+              >
+                <RotateCcw className="w-5 h-5" />
               </button>
               <button
                 onClick={togglePlay}
@@ -540,15 +585,24 @@ function App() {
                 )}
               </button>
               <button
+                onClick={() => skipForward(10)}
+                disabled={!currentSong}
+                className="p-2 rounded-md hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Skip forward 10s"
+              >
+                <RotateCw className="w-5 h-5" />
+              </button>
+              <button
                 onClick={nextSong}
                 className="p-2 rounded-md hover:bg-muted transition-colors"
+                title="Next song"
               >
                 <SkipForward className="w-5 h-5" />
               </button>
             </div>
 
             {/* Volume control */}
-            <div className="flex items-center justify-center gap-3">
+            <div className="flex items-center justify-center gap-3 mb-4">
               <Volume2 className="w-5 h-5 text-muted-foreground" />
               <input
                 type="range"
@@ -561,6 +615,38 @@ function App() {
               <span className="text-sm text-muted-foreground w-10 text-right">
                 {volume}%
               </span>
+            </div>
+
+            {/* Custom skip controls */}
+            <div className="flex items-center justify-center gap-3">
+              <Settings className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Skip:</span>
+              <button
+                onClick={() => skipBackward(skipAmount)}
+                disabled={!currentSong}
+                className="flex items-center gap-1 px-2 py-1 text-xs bg-muted text-muted-foreground rounded hover:bg-muted/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title={`Skip backward ${skipAmount}s`}
+              >
+                <RotateCcw className="w-3 h-3" />
+                -{skipAmount}s
+              </button>
+              <input
+                type="number"
+                min="1"
+                max="60"
+                value={skipAmount}
+                onChange={(e) => setSkipAmount(Math.max(1, Math.min(60, Number(e.target.value))))}
+                className="w-12 px-1 py-1 text-xs text-center bg-muted rounded border-0 focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <button
+                onClick={() => skipForward(skipAmount)}
+                disabled={!currentSong}
+                className="flex items-center gap-1 px-2 py-1 text-xs bg-muted text-muted-foreground rounded hover:bg-muted/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title={`Skip forward ${skipAmount}s`}
+              >
+                +{skipAmount}s
+                <RotateCw className="w-3 h-3" />
+              </button>
             </div>
           </div>
         </main>
