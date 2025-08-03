@@ -1,4 +1,4 @@
-use rodio::{OutputStream, OutputStreamHandle, Sink};
+use rodio::{OutputStream, OutputStreamHandle, Sink, Source};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::path::Path;
@@ -205,13 +205,31 @@ impl AudioPlayer {
     }
 
     fn create_sink_from_file_at_position(
-        _file_path: &str,
-        _stream_handle: &OutputStreamHandle,
-        _position: f64,
+        file_path: &str,
+        stream_handle: &OutputStreamHandle,
+        position: f64,
     ) -> Result<Sink, String> {
-        // Seeking is very complex with symphonia + rodio
-        // For now, just don't seek to avoid restarting
-        Err("Seeking not implemented".to_string())
+        // Create a new sink and source
+        let file = File::open(file_path).map_err(|e| format!("Failed to open file: {}", e))?;
+        let source = rodio::Decoder::new(std::io::BufReader::new(file))
+            .map_err(|e| format!("Failed to decode audio: {}", e))?;
+
+        let sink = Sink::try_new(stream_handle).map_err(|e| format!("Failed to create sink: {}", e))?;
+        
+        // Skip samples to approximate the seek position
+        let sample_rate = source.sample_rate() as f64;
+        let channels = source.channels() as f64;
+        let samples_to_skip = (position * sample_rate * channels) as usize;
+        
+        println!("Seeking to position: {:.2}s (skipping {} samples)", position, samples_to_skip);
+        
+        // Use rodio's skip functionality to skip samples
+        let skipped_source = source.skip_duration(std::time::Duration::from_secs_f64(position));
+        
+        sink.append(skipped_source);
+        sink.play();
+
+        Ok(sink)
     }
 
     pub fn play(&self, file_path: &str) -> Result<f32, String> {

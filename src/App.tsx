@@ -47,6 +47,7 @@ function App() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playHistory, setPlayHistory] = useState<PlayHistoryEntry[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Load data from localStorage on app start
   useEffect(() => {
@@ -217,9 +218,73 @@ function App() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Update current time periodically
+  const calculateTimeFromEvent = (e: React.MouseEvent<HTMLDivElement> | MouseEvent, element: HTMLDivElement) => {
+    const rect = element.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const width = rect.width;
+    const percentage = Math.max(0, Math.min(1, clickX / width));
+    return percentage * duration;
+  };
+
+  const handleProgressClick = async (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!currentSong || duration === 0 || isDragging) return;
+
+    const newTime = calculateTimeFromEvent(e, e.currentTarget);
+    console.log(`Seeking to ${newTime.toFixed(2)}s`);
+    
+    setCurrentTime(newTime);
+    
+    try {
+      await invoke("seek", { position: newTime });
+      console.log("Seek successful");
+    } catch (error) {
+      console.warn("Seeking failed:", error);
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!currentSong || duration === 0) return;
+    setIsDragging(true);
+    const newTime = calculateTimeFromEvent(e, e.currentTarget);
+    setCurrentTime(newTime);
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging || !currentSong || duration === 0) return;
+    const progressBar = document.querySelector('.progress-bar') as HTMLDivElement;
+    if (progressBar) {
+      const newTime = calculateTimeFromEvent(e, progressBar);
+      setCurrentTime(newTime);
+    }
+  };
+
+  const handleMouseUp = async () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    
+    try {
+      await invoke("seek", { position: currentTime });
+      console.log("Drag seek successful");
+    } catch (error) {
+      console.warn("Drag seeking failed:", error);
+    }
+  };
+
+  // Add mouse event listeners for dragging
   useEffect(() => {
-    if (!isPlaying) return;
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, currentTime]);
+
+  // Update current time periodically (but not while dragging)
+  useEffect(() => {
+    if (!isPlaying || isDragging) return;
 
     const interval = setInterval(() => {
       setCurrentTime(prev => {
@@ -229,7 +294,7 @@ function App() {
     }, 100);
 
     return () => clearInterval(interval);
-  }, [isPlaying, duration]);
+  }, [isPlaying, duration, isDragging]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -438,10 +503,17 @@ function App() {
               <span className="text-sm text-muted-foreground w-12 text-right">
                 {formatTime(currentTime)}
               </span>
-              <div className="flex-1 h-2 bg-muted rounded-lg relative">
+              <div 
+                className="flex-1 h-2 bg-muted rounded-lg relative cursor-pointer progress-bar" 
+                onClick={handleProgressClick}
+                onMouseDown={handleMouseDown}
+              >
                 <div
                   className="h-full bg-primary rounded-lg transition-all duration-100"
-                  style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                  style={{ 
+                    width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
+                    transition: isDragging ? 'none' : 'all 100ms'
+                  }}
                 />
               </div>
               <span className="text-sm text-muted-foreground w-12">
