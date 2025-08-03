@@ -10,13 +10,37 @@ Odtwarzacz muzyczny zbudowany w Tauri z React, TypeScript, Tailwind CSS i shadcn
 ## ✨ Funkcje
 
 - 🎶 **Obsługa wielu formatów audio**: MP3, WAV, FLAC, OGG, M4A
-- ⏯️ **Podstawowe kontrolki**: Play, Pause, Next, Previous, Stop
-- 🔊 **Kontrola głośności**: Regulacja poziomu dźwięku
-- 📋 **Zarządzanie playlistą**: Dodawanie i odtwarzanie wielu utworów
-- ⏱️ **Wyświetlanie czasu**: Aktualny czas i całkowity czas trwania
-- 📊 **Pasek postępu**: Wizualne wyświetlanie postępu odtwarzania
-- 🎨 **Nowoczesny UI**: Elegancki interfejs z Tailwind CSS i shadcn/ui
+- ⏯️ **Kompletne kontrolki odtwarzania**: Play, Pause, Next, Previous, Stop
+- 🔊 **Zaawansowana kontrola głośności**: Regulacja poziomu dźwięku z zapisywaniem ustawień
+- 📋 **Inteligentne zarządzanie playlistą**: Automatyczne zapisywanie, czyszczenie, dodawanie wielu plików
+- ⏱️ **Precyzyjne wyświetlanie czasu**: Aktualny czas i całkowity czas trwania z formatowaniem MM:SS
+- 🎯 **Interaktywny seeking**: Klikanie i przeciąganie paska postępu do nawigacji w utworze
+- ⏭️ **Inteligentne skipowanie**: Przyciski 10s oraz konfigurowalne skip (1-60s)
+- 📊 **Zaawansowane metadane**: Wyświetlanie tytułu, artysty, albumu, roku, gatunku w dedykowanych tabs
+- 🔧 **Informacje techniczne**: Codec, częstotliwość próbkowania, kanały, bits per sample
+- 📈 **Historia odtwarzania**: Śledzenie odtworzonych utworów z licznikiem i datami
+- ⌨️ **Kompletne skróty klawiszowe**: Sterowanie całym playerem klawiaturą
+- 🎨 **Nowoczesny UI z tabs**: Elegancki interfejs z shadcn/ui i organizacją w zakładki
+- 💾 **Automatyczne zapisywanie**: Wszystkie ustawienia, playlist i historia w localStorage
 - 🌙 **Dark mode ready**: Wsparcie dla ciemnego motywu
+
+## 📱 Interfejs użytkownika
+
+### Główne sekcje aplikacji:
+- **Playlist** (lewa strona): Lista utworów z metadanymi, przyciskami zarządzania
+- **Now Playing** (środek): Aktualnie odtwarzany utwór z albumem/artwork placeholder
+- **Tabs**: 
+  - *Metadata* - Informacje o utworze (tytuł, artysta, album, rok, gatunek)
+  - *Technical Info* - Parametry techniczne (codec, sample rate, kanały)
+  - *Play History* - Historia odtworzeń z licznikami i datami
+- **Controls** (dół): Pasek postępu, kontrolki odtwarzania, volume, custom skip
+
+### Funkcje interaktywne:
+- **Kliknij na utwór** w playlist aby go odtworzyć
+- **Kliknij na pasek postępu** aby przeskoczyć do pozycji
+- **Przeciągnij pasek postępu** aby płynnie przewijać
+- **Dostosuj skip amount** (1-60s) i używaj przycisków +/- lub Shift+strzałki
+- **Wszystkie ustawienia** są automatycznie zapisywane
 
 ## 🚀 Rozpoczęcie pracy
 
@@ -82,10 +106,11 @@ npm run tauri build
 - **Lucide React** dla ikon
 
 ### Backend (Rust)
-- **Tauri 2.0** dla integracji desktop
-- **Rodio** dla odtwarzania audio
-- **Symphonia** dla metadanych i dekodowania audio
-- **Multi-threaded audio engine** z komunikacją przez kanały
+- **Tauri 2.0** dla integracji desktop z bezpieczeństwem i wydajnością
+- **Rodio** dla wysokiej jakości odtwarzania audio z seeking
+- **Symphonia** dla zaawansowanego dekodowania i ekstraktowania metadanych
+- **Multi-threaded audio engine** z asynchroniczną komunikacją przez kanały
+- **Persistent storage** z automatycznym zapisywaniem stanu aplikacji
 
 ### Struktura plików
 ```
@@ -108,24 +133,36 @@ npm run tauri build
 ## 🎯 Funkcjonalności
 
 ### ✅ Zaimplementowane
-- [x] Odtwarzanie plików audio (MP3, WAV, FLAC, OGG, M4A)
-- [x] Kontrolki odtwarzania (play, pause, stop, next, previous)
-- [x] Kontrola głośności
-- [x] Zarządzanie playlistą
-- [x] Wyświetlanie czasu trwania i aktualnego czasu
-- [x] Przeglądarka plików do dodawania muzyki
-- [x] Responsywny interfejs użytkownika
-- [x] Pasek postępu (tylko do wyświetlania)
+- [x] **Odtwarzanie audio**: Pełna obsługa MP3, WAV, FLAC, OGG, M4A
+- [x] **Kontrolki odtwarzania**: Play, pause, stop, next, previous z pełną synchronizacją
+- [x] **Zaawansowana kontrola głośności**: Regulacja z zapisywaniem i mute/unmute
+- [x] **Seeking i nawigacja**: Klikalne i przeciągalne paski postępu z precyzyjnym seeking
+- [x] **Inteligentne skipowanie**: Stałe 10s i konfigurowalne skip (1-60s) w obu kierunkach
+- [x] **Kompletne zarządzanie playlistą**: Dodawanie, usuwanie, automatyczne zapisywanie
+- [x] **Metadane i informacje techniczne**: Tabs z metadanymi utworów i parametrami audio
+- [x] **Historia odtwarzania**: Śledzenie z licznikami odtworzeń i datami
+- [x] **Skróty klawiszowe**: Pełne sterowanie klawiaturą z help overlay
+- [x] **Persistence**: Automatyczne zapisywanie playlist, historii, głośności, ustawień
+- [x] **Responsywny UI**: shadcn/ui tabs, eleganckie komponenty, dark mode ready
+- [x] **Przeglądarka plików**: Multiple selection z automatycznym ładowaniem metadanych
+
+### ⌨️ Skróty klawiszowe
+- **Spacja** - Play/Pause
+- **←/→** - Skip 10s backward/forward  
+- **Shift + ←/→** - Skip custom amount backward/forward
+- **↑/↓** - Volume up/down
+- **M** - Mute/Unmute
+- **Ctrl + P/N** - Previous/Next song
+- **Ctrl + H** - Show help
+- **Esc** - Close help
 
 ### 🚧 W planach
-- [ ] Prawdziwe przewijanie (seeking) w utworach
-- [ ] Wyświetlanie metadanych (tytuł, artysta, album)
-- [ ] Obsługa okładek albumów
-- [ ] Zapisywanie playlist
-- [ ] Equalizer
-- [ ] Skróty klawiszowe
-- [ ] Mini-player mode
-- [ ] Import biblioteki muzycznej
+- [ ] **Obsługa okładek albumów**: Wyświetlanie artwork z plików
+- [ ] **Equalizer**: Regulacja częstotliwości
+- [ ] **Mini-player mode**: Kompaktowy widok
+- [ ] **Import biblioteki muzycznej**: Skanowanie folderów
+- [ ] **Eksport playlist**: Zapisywanie do plików M3U/PLS
+- [ ] **Visualizer**: Spektrum audio w czasie rzeczywistym
 
 ## 🛠️ Rozwój
 
