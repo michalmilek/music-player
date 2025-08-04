@@ -14,11 +14,13 @@ import {
   RotateCw,
   Settings,
   HelpCircle,
-  X
+  X,
+  Minimize2
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { AudioVisualizer } from "./components/AudioVisualizer";
 import { Equalizer } from "./components/Equalizer";
+import { MiniPlayer } from "./components/MiniPlayer";
 
 interface TrackMetadata {
   title: string | null;
@@ -58,6 +60,7 @@ function App() {
   const [skipAmount, setSkipAmount] = useState(10);
   const [showHelp, setShowHelp] = useState(false);
   const [equalizerEnabled, setEqualizerEnabled] = useState(false);
+  const [isMiniPlayer, setIsMiniPlayer] = useState(false);
 
   // Load data from localStorage on app start
   useEffect(() => {
@@ -381,8 +384,13 @@ function App() {
           }
           break;
         case 'KeyM':
-          e.preventDefault();
-          handleVolumeChange(volume === 0 ? 50 : 0); // Mute/unmute
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            setIsMiniPlayer(!isMiniPlayer);
+          } else {
+            e.preventDefault();
+            handleVolumeChange(volume === 0 ? 50 : 0); // Mute/unmute
+          }
           break;
         case 'KeyH':
           if (e.ctrlKey || e.metaKey) {
@@ -399,7 +407,7 @@ function App() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isPlaying, volume, skipAmount, currentSong, playlist]);
+  }, [isPlaying, volume, skipAmount, currentSong, playlist, isMiniPlayer]);
 
   // Update current time periodically (but not while dragging)
   useEffect(() => {
@@ -415,6 +423,86 @@ function App() {
     return () => clearInterval(interval);
   }, [isPlaying, duration, isDragging]);
 
+  if (isMiniPlayer) {
+    return (
+      <>
+        <div className="min-h-screen bg-background p-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-8">
+              <Music className="w-32 h-32 text-muted-foreground mx-auto mb-4" />
+              <h2 className="text-2xl font-semibold mb-2">Mini Player Mode</h2>
+              <p className="text-muted-foreground mb-6">
+                The player controls are at the bottom of your screen
+              </p>
+              <button
+                onClick={loadMusic}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+              >
+                <FolderOpen className="w-5 h-5" />
+                Add Music
+              </button>
+            </div>
+            
+            {/* Playlist in mini mode */}
+            <div className="bg-muted/20 rounded-lg p-4">
+              <h3 className="text-lg font-semibold mb-4">Playlist ({playlist.length} songs)</h3>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {playlist.map((song, index) => (
+                  <div
+                    key={index}
+                    onClick={() => playSong(song)}
+                    className={`p-3 rounded-md cursor-pointer transition-colors flex items-center gap-3 ${
+                      currentSong?.path === song.path
+                        ? 'bg-accent text-accent-foreground'
+                        : 'hover:bg-muted'
+                    }`}
+                  >
+                    <span className="text-sm text-muted-foreground w-8 text-center">
+                      {index + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="truncate text-sm font-medium">{song.name}</div>
+                      {song.metadata?.artist && (
+                        <div className="text-xs text-muted-foreground truncate">
+                          {song.metadata.artist}
+                        </div>
+                      )}
+                    </div>
+                    {song.metadata?.duration && (
+                      <span className="text-xs text-muted-foreground">
+                        {formatTime(song.metadata.duration)}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+        <MiniPlayer
+          currentSong={currentSong}
+          isPlaying={isPlaying}
+          volume={volume}
+          currentTime={currentTime}
+          duration={duration}
+          onTogglePlay={togglePlay}
+          onPrevious={previousSong}
+          onNext={nextSong}
+          onVolumeChange={handleVolumeChange}
+          onExpand={() => setIsMiniPlayer(false)}
+          onSeek={async (time) => {
+            setCurrentTime(time);
+            try {
+              await invoke("seek", { position: time });
+            } catch (error) {
+              console.warn("Seek failed:", error);
+            }
+          }}
+        />
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -424,13 +512,22 @@ function App() {
             <Music className="w-6 h-6" />
             Tauri Music Player
           </h1>
-          <button
-            onClick={() => setShowHelp(true)}
-            className="p-2 rounded-md hover:bg-muted transition-colors"
-            title="Keyboard shortcuts (Ctrl+H)"
-          >
-            <HelpCircle className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsMiniPlayer(true)}
+              className="p-2 rounded-md hover:bg-muted transition-colors"
+              title="Mini player mode"
+            >
+              <Minimize2 className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setShowHelp(true)}
+              className="p-2 rounded-md hover:bg-muted transition-colors"
+              title="Keyboard shortcuts (Ctrl+H)"
+            >
+              <HelpCircle className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -826,6 +923,10 @@ function App() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Next song</span>
                 <kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl + N</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Toggle mini player</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl + M</kbd>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Show this help</span>

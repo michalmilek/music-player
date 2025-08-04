@@ -22,6 +22,7 @@ Odtwarzacz muzyczny zbudowany w Tauri z React, TypeScript, Tailwind CSS i shadcn
 - ⌨️ **Kompletne skróty klawiszowe**: Sterowanie całym playerem klawiaturą
 - 📊 **Visualizer audio**: Animowana wizualizacja spektrum dźwięku w czasie rzeczywistym
 - 🎛️ **10-pasmowy Equalizer**: Precyzyjna kontrola częstotliwości z gotowymi presetami
+- 🔲 **Mini-player mode**: Kompaktowy tryb z kontrolkami u dołu ekranu
 - 🎨 **Nowoczesny UI z tabs**: Elegancki interfejs z shadcn/ui i organizacją w zakładki
 - 💾 **Automatyczne zapisywanie**: Wszystkie ustawienia, playlist i historia w localStorage
 - 🌙 **Dark mode ready**: Wsparcie dla ciemnego motywu
@@ -151,6 +152,7 @@ npm run tauri build
 - [x] **Przeglądarka plików**: Multiple selection z automatycznym ładowaniem metadanych
 - [x] **Visualizer**: Animowana wizualizacja spektrum audio w czasie rzeczywistym
 - [x] **Equalizer**: 10-pasmowy equalizer z presetami i regulacją częstotliwości
+- [x] **Mini-player mode**: Kompaktowy widok z kontrolkami na dole ekranu
 
 ### ⌨️ Skróty klawiszowe
 - **Spacja** - Play/Pause
@@ -159,12 +161,12 @@ npm run tauri build
 - **↑/↓** - Volume up/down
 - **M** - Mute/Unmute
 - **Ctrl + P/N** - Previous/Next song
+- **Ctrl + M** - Toggle mini player mode
 - **Ctrl + H** - Show help
 - **Esc** - Close help
 
 ### 🚧 W planach
 - [ ] **Obsługa okładek albumów**: Wyświetlanie artwork z plików
-- [ ] **Mini-player mode**: Kompaktowy widok
 - [ ] **Import biblioteki muzycznej**: Skanowanie folderów
 - [ ] **Eksport playlist**: Zapisywanie do plików M3U/PLS
 
