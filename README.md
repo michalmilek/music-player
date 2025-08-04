@@ -7,6 +7,11 @@ Odtwarzacz muzyczny zbudowany w Tauri z React, TypeScript, Tailwind CSS i shadcn
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
 ![Rust](https://img.shields.io/badge/Rust-1.70+-orange)
 
+## 📸 Screenshot
+
+![Tauri Music Player](screens/screen1.png)
+*Główny interfejs z visualizerem audio w akcji*
+
 ## ✨ Funkcje
 
 - 🎶 **Obsługa wielu formatów audio**: MP3, WAV, FLAC, OGG, M4A
