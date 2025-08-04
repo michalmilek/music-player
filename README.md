@@ -20,6 +20,7 @@ Odtwarzacz muzyczny zbudowany w Tauri z React, TypeScript, Tailwind CSS i shadcn
 - 🔧 **Informacje techniczne**: Codec, częstotliwość próbkowania, kanały, bits per sample
 - 📈 **Historia odtwarzania**: Śledzenie odtworzonych utworów z licznikiem i datami
 - ⌨️ **Kompletne skróty klawiszowe**: Sterowanie całym playerem klawiaturą
+- 📊 **Visualizer audio**: Animowana wizualizacja spektrum dźwięku w czasie rzeczywistym
 - 🎨 **Nowoczesny UI z tabs**: Elegancki interfejs z shadcn/ui i organizacją w zakładki
 - 💾 **Automatyczne zapisywanie**: Wszystkie ustawienia, playlist i historia w localStorage
 - 🌙 **Dark mode ready**: Wsparcie dla ciemnego motywu
@@ -30,6 +31,7 @@ Odtwarzacz muzyczny zbudowany w Tauri z React, TypeScript, Tailwind CSS i shadcn
 - **Playlist** (lewa strona): Lista utworów z metadanymi, przyciskami zarządzania
 - **Now Playing** (środek): Aktualnie odtwarzany utwór z albumem/artwork placeholder
 - **Tabs**: 
+  - *Visualizer* - Animowana wizualizacja spektrum audio w czasie rzeczywistym
   - *Metadata* - Informacje o utworze (tytuł, artysta, album, rok, gatunek)
   - *Technical Info* - Parametry techniczne (codec, sample rate, kanały)
   - *Play History* - Historia odtworzeń z licznikami i datami
@@ -145,6 +147,7 @@ npm run tauri build
 - [x] **Persistence**: Automatyczne zapisywanie playlist, historii, głośności, ustawień
 - [x] **Responsywny UI**: shadcn/ui tabs, eleganckie komponenty, dark mode ready
 - [x] **Przeglądarka plików**: Multiple selection z automatycznym ładowaniem metadanych
+- [x] **Visualizer**: Animowana wizualizacja spektrum audio w czasie rzeczywistym
 
 ### ⌨️ Skróty klawiszowe
 - **Spacja** - Play/Pause
@@ -162,7 +165,6 @@ npm run tauri build
 - [ ] **Mini-player mode**: Kompaktowy widok
 - [ ] **Import biblioteki muzycznej**: Skanowanie folderów
 - [ ] **Eksport playlist**: Zapisywanie do plików M3U/PLS
-- [ ] **Visualizer**: Spektrum audio w czasie rzeczywistym
 
 ## 🛠️ Rozwój
 

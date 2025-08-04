@@ -17,6 +17,7 @@ import {
   X
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
+import { AudioVisualizer } from "./components/AudioVisualizer";
 
 interface TrackMetadata {
   title: string | null;
@@ -485,8 +486,18 @@ function App() {
           <div className="flex-1 p-8">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-8">
-                <div className="w-64 h-64 bg-muted rounded-lg flex items-center justify-center mb-6 mx-auto">
-                  <Music className="w-32 h-32 text-muted-foreground" />
+                <div className="w-full max-w-2xl h-64 bg-muted rounded-lg mb-6 mx-auto overflow-hidden">
+                  {currentSong ? (
+                    <AudioVisualizer 
+                      isPlaying={isPlaying} 
+                      currentTime={currentTime}
+                      duration={duration}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <Music className="w-32 h-32 text-muted-foreground" />
+                    </div>
+                  )}
                 </div>
                 <h2 className="text-2xl font-bold mb-2">
                   {currentSong?.metadata?.title || currentSong?.name || 'No song playing'}
@@ -498,8 +509,9 @@ function App() {
                 )}
               </div>
 
-              <Tabs defaultValue={currentSong ? "metadata" : "history"} className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+              <Tabs defaultValue={currentSong ? "visualizer" : "history"} className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="visualizer" disabled={!currentSong}>Visualizer</TabsTrigger>
                   <TabsTrigger value="metadata" disabled={!currentSong}>Metadata</TabsTrigger>
                   <TabsTrigger value="technical" disabled={!currentSong}>Technical Info</TabsTrigger>
                   <TabsTrigger value="history">Play History</TabsTrigger>
@@ -507,6 +519,16 @@ function App() {
 
                 {currentSong && (
                   <>
+                    <TabsContent value="visualizer" className="mt-6">
+                      <div className="w-full h-64 bg-black rounded-lg overflow-hidden">
+                        <AudioVisualizer 
+                          isPlaying={isPlaying} 
+                          currentTime={currentTime}
+                          duration={duration}
+                        />
+                      </div>
+                    </TabsContent>
+
                     <TabsContent value="metadata" className="mt-6">
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div className="space-y-3">
