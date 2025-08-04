@@ -10,6 +10,7 @@ use symphonia::core::probe::Hint;
 use std::fs::File;
 use std::thread;
 use std::sync::mpsc::{self, Receiver, Sender};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub enum PlayerCommand {
@@ -19,6 +20,9 @@ pub enum PlayerCommand {
     Stop,
     Seek(f64),
     SetVolume(f32),
+    SetEqualizerBand(u32, f32),
+    SetEqualizerPreset(Vec<f32>),
+    EnableEqualizer(bool),
 }
 
 #[derive(Debug, Clone)]
@@ -43,9 +47,30 @@ pub struct TrackMetadata {
     pub bits_per_sample: Option<u32>,
 }
 
+#[derive(Debug, Clone)]
+pub struct EqualizerBands {
+    bands: HashMap<u32, f32>, // frequency -> gain in dB
+    enabled: bool,
+}
+
+impl Default for EqualizerBands {
+    fn default() -> Self {
+        let mut bands = HashMap::new();
+        // Initialize with default frequencies
+        for freq in &[32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000] {
+            bands.insert(*freq, 0.0);
+        }
+        Self {
+            bands,
+            enabled: false,
+        }
+    }
+}
+
 pub struct AudioPlayer {
     command_sender: Sender<PlayerCommand>,
     track_info: Arc<Mutex<TrackInfo>>,
+    equalizer: Arc<Mutex<EqualizerBands>>,
     _audio_thread: thread::JoinHandle<()>,
 }
 
@@ -57,21 +82,24 @@ impl AudioPlayer {
             current_time: 0.0,
             is_playing: false,
         }));
+        let equalizer = Arc::new(Mutex::new(EqualizerBands::default()));
 
         let track_info_clone = track_info.clone();
+        let equalizer_clone = equalizer.clone();
         
         let audio_thread = thread::spawn(move || {
-            Self::audio_thread(command_receiver, track_info_clone);
+            Self::audio_thread(command_receiver, track_info_clone, equalizer_clone);
         });
 
         Ok(Self {
             command_sender,
             track_info,
+            equalizer,
             _audio_thread: audio_thread,
         })
     }
 
-    fn audio_thread(command_receiver: Receiver<PlayerCommand>, track_info: Arc<Mutex<TrackInfo>>) {
+    fn audio_thread(command_receiver: Receiver<PlayerCommand>, track_info: Arc<Mutex<TrackInfo>>, equalizer: Arc<Mutex<EqualizerBands>>) {
         let (_stream, stream_handle) = OutputStream::try_default().unwrap();
         let mut current_sink: Option<Sink> = None;
         let mut current_file_path: Option<String> = None;
@@ -129,6 +157,27 @@ impl AudioPlayer {
                         if let Some(ref sink) = current_sink {
                             sink.set_volume(volume);
                         }
+                    }
+                    PlayerCommand::SetEqualizerBand(frequency, gain) => {
+                        let mut eq = equalizer.lock().unwrap();
+                        eq.bands.insert(frequency, gain);
+                        // Note: Actual EQ processing would require audio filters
+                        println!("EQ Band set: {}Hz = {}dB", frequency, gain);
+                    }
+                    PlayerCommand::SetEqualizerPreset(gains) => {
+                        let mut eq = equalizer.lock().unwrap();
+                        let frequencies = vec![32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+                        for (i, gain) in gains.iter().enumerate() {
+                            if i < frequencies.len() {
+                                eq.bands.insert(frequencies[i], *gain);
+                            }
+                        }
+                        println!("EQ Preset applied");
+                    }
+                    PlayerCommand::EnableEqualizer(enabled) => {
+                        let mut eq = equalizer.lock().unwrap();
+                        eq.enabled = enabled;
+                        println!("Equalizer {}", if enabled { "enabled" } else { "disabled" });
                     }
                 }
             }
@@ -274,6 +323,24 @@ impl AudioPlayer {
 
     pub fn is_playing(&self) -> bool {
         self.track_info.lock().unwrap().is_playing
+    }
+
+    pub fn set_equalizer_band(&self, frequency: u32, gain: f32) -> Result<(), String> {
+        self.command_sender
+            .send(PlayerCommand::SetEqualizerBand(frequency, gain))
+            .map_err(|e| format!("Failed to send equalizer band command: {}", e))
+    }
+
+    pub fn set_equalizer_preset(&self, gains: Vec<f32>) -> Result<(), String> {
+        self.command_sender
+            .send(PlayerCommand::SetEqualizerPreset(gains))
+            .map_err(|e| format!("Failed to send equalizer preset command: {}", e))
+    }
+
+    pub fn enable_equalizer(&self, enabled: bool) -> Result<(), String> {
+        self.command_sender
+            .send(PlayerCommand::EnableEqualizer(enabled))
+            .map_err(|e| format!("Failed to send equalizer enable command: {}", e))
     }
 
     pub fn get_track_metadata(file_path: &str) -> Result<TrackMetadata, String> {

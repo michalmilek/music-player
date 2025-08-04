@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { AudioVisualizer } from "./components/AudioVisualizer";
+import { Equalizer } from "./components/Equalizer";
 
 interface TrackMetadata {
   title: string | null;
@@ -56,6 +57,7 @@ function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [skipAmount, setSkipAmount] = useState(10);
   const [showHelp, setShowHelp] = useState(false);
+  const [equalizerEnabled, setEqualizerEnabled] = useState(false);
 
   // Load data from localStorage on app start
   useEffect(() => {
@@ -249,6 +251,15 @@ function App() {
       await invoke("seek", { position: newTime });
     } catch (error) {
       console.warn("Skip forward failed:", error);
+    }
+  };
+
+  const handleEqualizerToggle = async (enabled: boolean) => {
+    setEqualizerEnabled(enabled);
+    try {
+      await invoke("enable_equalizer", { enabled });
+    } catch (error) {
+      console.error("Failed to toggle equalizer:", error);
     }
   };
 
@@ -510,8 +521,9 @@ function App() {
               </div>
 
               <Tabs defaultValue={currentSong ? "visualizer" : "history"} className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="visualizer" disabled={!currentSong}>Visualizer</TabsTrigger>
+                  <TabsTrigger value="equalizer">Equalizer</TabsTrigger>
                   <TabsTrigger value="metadata" disabled={!currentSong}>Metadata</TabsTrigger>
                   <TabsTrigger value="technical" disabled={!currentSong}>Technical Info</TabsTrigger>
                   <TabsTrigger value="history">Play History</TabsTrigger>
@@ -588,6 +600,13 @@ function App() {
                     </TabsContent>
                   </>
                 )}
+
+                <TabsContent value="equalizer" className="mt-6">
+                  <Equalizer 
+                    isEnabled={equalizerEnabled} 
+                    onToggle={handleEqualizerToggle}
+                  />
+                </TabsContent>
 
                 <TabsContent value="history" className="mt-6">
                   <div className="flex items-center justify-between mb-4 gap-2">

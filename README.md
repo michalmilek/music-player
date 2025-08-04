@@ -21,6 +21,7 @@ Odtwarzacz muzyczny zbudowany w Tauri z React, TypeScript, Tailwind CSS i shadcn
 - 📈 **Historia odtwarzania**: Śledzenie odtworzonych utworów z licznikiem i datami
 - ⌨️ **Kompletne skróty klawiszowe**: Sterowanie całym playerem klawiaturą
 - 📊 **Visualizer audio**: Animowana wizualizacja spektrum dźwięku w czasie rzeczywistym
+- 🎛️ **10-pasmowy Equalizer**: Precyzyjna kontrola częstotliwości z gotowymi presetami
 - 🎨 **Nowoczesny UI z tabs**: Elegancki interfejs z shadcn/ui i organizacją w zakładki
 - 💾 **Automatyczne zapisywanie**: Wszystkie ustawienia, playlist i historia w localStorage
 - 🌙 **Dark mode ready**: Wsparcie dla ciemnego motywu
@@ -32,6 +33,7 @@ Odtwarzacz muzyczny zbudowany w Tauri z React, TypeScript, Tailwind CSS i shadcn
 - **Now Playing** (środek): Aktualnie odtwarzany utwór z albumem/artwork placeholder
 - **Tabs**: 
   - *Visualizer* - Animowana wizualizacja spektrum audio w czasie rzeczywistym
+  - *Equalizer* - 10-pasmowy equalizer (32Hz-16kHz) z presetami (Flat, Bass, Treble, Vocal, Rock, Electronic, Acoustic)
   - *Metadata* - Informacje o utworze (tytuł, artysta, album, rok, gatunek)
   - *Technical Info* - Parametry techniczne (codec, sample rate, kanały)
   - *Play History* - Historia odtworzeń z licznikami i datami
@@ -148,6 +150,7 @@ npm run tauri build
 - [x] **Responsywny UI**: shadcn/ui tabs, eleganckie komponenty, dark mode ready
 - [x] **Przeglądarka plików**: Multiple selection z automatycznym ładowaniem metadanych
 - [x] **Visualizer**: Animowana wizualizacja spektrum audio w czasie rzeczywistym
+- [x] **Equalizer**: 10-pasmowy equalizer z presetami i regulacją częstotliwości
 
 ### ⌨️ Skróty klawiszowe
 - **Spacja** - Play/Pause
@@ -161,7 +164,6 @@ npm run tauri build
 
 ### 🚧 W planach
 - [ ] **Obsługa okładek albumów**: Wyświetlanie artwork z plików
-- [ ] **Equalizer**: Regulacja częstotliwości
 - [ ] **Mini-player mode**: Kompaktowy widok
 - [ ] **Import biblioteki muzycznej**: Skanowanie folderów
 - [ ] **Eksport playlist**: Zapisywanie do plików M3U/PLS

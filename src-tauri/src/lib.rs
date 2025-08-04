@@ -67,6 +67,24 @@ fn get_track_metadata(path: String) -> Result<TrackMetadata, String> {
     AudioPlayer::get_track_metadata(&path)
 }
 
+#[tauri::command]
+fn set_equalizer_band(frequency: u32, gain: f32, state: State<AppState>) -> Result<(), String> {
+    let player = state.player.lock().unwrap();
+    player.set_equalizer_band(frequency, gain)
+}
+
+#[tauri::command]
+fn set_equalizer_preset(gains: Vec<f32>, state: State<AppState>) -> Result<(), String> {
+    let player = state.player.lock().unwrap();
+    player.set_equalizer_preset(gains)
+}
+
+#[tauri::command]
+fn enable_equalizer(enabled: bool, state: State<AppState>) -> Result<(), String> {
+    let player = state.player.lock().unwrap();
+    player.enable_equalizer(enabled)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let player = AudioPlayer::new().expect("Failed to initialize audio player");
@@ -87,7 +105,10 @@ pub fn run() {
             seek,
             get_current_time,
             get_song_info,
-            get_track_metadata
+            get_track_metadata,
+            set_equalizer_band,
+            set_equalizer_preset,
+            enable_equalizer
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
