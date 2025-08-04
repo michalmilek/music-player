@@ -34,6 +34,12 @@ interface TrackMetadata {
   sample_rate: number | null;
   channels: string | null;
   bits_per_sample: number | null;
+  has_artwork: boolean;
+}
+
+interface AlbumArtwork {
+  data: string;
+  mime_type: string;
 }
 
 interface Song {
@@ -61,6 +67,7 @@ function App() {
   const [showHelp, setShowHelp] = useState(false);
   const [equalizerEnabled, setEqualizerEnabled] = useState(false);
   const [isMiniPlayer, setIsMiniPlayer] = useState(false);
+  const [currentArtwork, setCurrentArtwork] = useState<string | null>(null);
 
   // Load data from localStorage on app start
   useEffect(() => {
@@ -177,6 +184,20 @@ function App() {
     }
   };
 
+  const loadArtwork = async (songPath: string) => {
+    try {
+      const artwork = await invoke<AlbumArtwork | null>("get_album_artwork", { path: songPath });
+      if (artwork) {
+        setCurrentArtwork(`data:${artwork.mime_type};base64,${artwork.data}`);
+      } else {
+        setCurrentArtwork(null);
+      }
+    } catch (error) {
+      console.error("Failed to load artwork:", error);
+      setCurrentArtwork(null);
+    }
+  };
+
   const playSong = async (song: Song) => {
     try {
       setCurrentSong(song);
@@ -188,6 +209,13 @@ function App() {
 
       // Apply current volume to new song
       await invoke("set_volume", { volume: volume / 100 });
+
+      // Load album artwork
+      if (song.metadata?.has_artwork) {
+        loadArtwork(song.path);
+      } else {
+        setCurrentArtwork(null);
+      }
 
       // Add to play history
       addToHistory(song);
@@ -485,6 +513,7 @@ function App() {
           volume={volume}
           currentTime={currentTime}
           duration={duration}
+          currentArtwork={currentArtwork}
           onTogglePlay={togglePlay}
           onPrevious={previousSong}
           onNext={nextSong}
@@ -594,12 +623,12 @@ function App() {
           <div className="flex-1 p-8">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-8">
-                <div className="w-full max-w-2xl h-64 bg-muted rounded-lg mb-6 mx-auto overflow-hidden">
-                  {currentSong ? (
-                    <AudioVisualizer 
-                      isPlaying={isPlaying} 
-                      currentTime={currentTime}
-                      duration={duration}
+                <div className="w-64 h-64 bg-muted rounded-lg overflow-hidden mx-auto mb-6">
+                  {currentArtwork ? (
+                    <img 
+                      src={currentArtwork} 
+                      alt="Album artwork"
+                      className="w-full h-full object-cover"
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full">

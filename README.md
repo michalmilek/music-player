@@ -23,6 +23,7 @@ Odtwarzacz muzyczny zbudowany w Tauri z React, TypeScript, Tailwind CSS i shadcn
 - 📊 **Visualizer audio**: Animowana wizualizacja spektrum dźwięku w czasie rzeczywistym
 - 🎛️ **10-pasmowy Equalizer**: Precyzyjna kontrola częstotliwości z gotowymi presetami
 - 🔲 **Mini-player mode**: Kompaktowy tryb z kontrolkami u dołu ekranu
+- 🖼️ **Okładki albumów**: Automatyczne wyodrębnianie artwork z MP3/FLAC/innych formatów
 - 🎨 **Nowoczesny UI z tabs**: Elegancki interfejs z shadcn/ui i organizacją w zakładki
 - 💾 **Automatyczne zapisywanie**: Wszystkie ustawienia, playlist i historia w localStorage
 - 🌙 **Dark mode ready**: Wsparcie dla ciemnego motywu
@@ -31,7 +32,7 @@ Odtwarzacz muzyczny zbudowany w Tauri z React, TypeScript, Tailwind CSS i shadcn
 
 ### Główne sekcje aplikacji:
 - **Playlist** (lewa strona): Lista utworów z metadanymi, przyciskami zarządzania
-- **Now Playing** (środek): Aktualnie odtwarzany utwór z albumem/artwork placeholder
+- **Now Playing** (środek): Okładka albumu z informacjami o utworze
 - **Tabs**: 
   - *Visualizer* - Animowana wizualizacja spektrum audio w czasie rzeczywistym
   - *Equalizer* - 10-pasmowy equalizer (32Hz-16kHz) z presetami (Flat, Bass, Treble, Vocal, Rock, Electronic, Acoustic)
@@ -153,6 +154,7 @@ npm run tauri build
 - [x] **Visualizer**: Animowana wizualizacja spektrum audio w czasie rzeczywistym
 - [x] **Equalizer**: 10-pasmowy equalizer z presetami i regulacją częstotliwości
 - [x] **Mini-player mode**: Kompaktowy widok z kontrolkami na dole ekranu
+- [x] **Obsługa okładek albumów**: Automatyczne wyodrębnianie i wyświetlanie artwork z plików
 
 ### ⌨️ Skróty klawiszowe
 - **Spacja** - Play/Pause
@@ -166,7 +168,6 @@ npm run tauri build
 - **Esc** - Close help
 
 ### 🚧 W planach
-- [ ] **Obsługa okładek albumów**: Wyświetlanie artwork z plików
 - [ ] **Import biblioteki muzycznej**: Skanowanie folderów
 - [ ] **Eksport playlist**: Zapisywanie do plików M3U/PLS
 

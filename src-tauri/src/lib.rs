@@ -1,6 +1,6 @@
 mod audio;
 
-use audio::{AudioPlayer, TrackMetadata};
+use audio::{AudioPlayer, TrackMetadata, AlbumArtwork};
 use std::sync::{Arc, Mutex};
 use tauri::State;
 
@@ -85,6 +85,11 @@ fn enable_equalizer(enabled: bool, state: State<AppState>) -> Result<(), String>
     player.enable_equalizer(enabled)
 }
 
+#[tauri::command]
+fn get_album_artwork(path: String) -> Result<Option<AlbumArtwork>, String> {
+    AudioPlayer::get_album_artwork(&path)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let player = AudioPlayer::new().expect("Failed to initialize audio player");
@@ -108,7 +113,8 @@ pub fn run() {
             get_track_metadata,
             set_equalizer_band,
             set_equalizer_preset,
-            enable_equalizer
+            enable_equalizer,
+            get_album_artwork
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

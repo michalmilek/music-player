@@ -14,6 +14,7 @@ interface MiniPlayerProps {
   volume: number;
   currentTime: number;
   duration: number;
+  currentArtwork: string | null;
   onTogglePlay: () => void;
   onPrevious: () => void;
   onNext: () => void;
@@ -28,6 +29,7 @@ export function MiniPlayer({
   volume,
   currentTime,
   duration,
+  currentArtwork,
   onTogglePlay,
   onPrevious,
   onNext,
@@ -71,8 +73,18 @@ export function MiniPlayer({
         <div className="flex items-center justify-between gap-4">
           {/* Song info */}
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="w-12 h-12 bg-muted rounded flex items-center justify-center flex-shrink-0">
-              <Music className="w-6 h-6 text-muted-foreground" />
+            <div className="w-12 h-12 bg-muted rounded overflow-hidden flex-shrink-0">
+              {currentArtwork ? (
+                <img 
+                  src={currentArtwork} 
+                  alt="Album artwork"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <Music className="w-6 h-6 text-muted-foreground" />
+                </div>
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <div className="truncate font-medium text-sm">

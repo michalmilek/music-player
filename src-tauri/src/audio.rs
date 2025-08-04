@@ -5,12 +5,13 @@ use std::path::Path;
 use symphonia::core::codecs::CODEC_TYPE_NULL;
 use symphonia::core::formats::FormatOptions;
 use symphonia::core::io::MediaSourceStream;
-use symphonia::core::meta::MetadataOptions;
+use symphonia::core::meta::{MetadataOptions, StandardVisualKey};
 use symphonia::core::probe::Hint;
 use std::fs::File;
 use std::thread;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::collections::HashMap;
+use base64::{Engine as _, engine::general_purpose};
 
 #[derive(Debug, Clone)]
 pub enum PlayerCommand {
@@ -45,6 +46,13 @@ pub struct TrackMetadata {
     pub sample_rate: Option<u32>,
     pub channels: Option<String>,
     pub bits_per_sample: Option<u32>,
+    pub has_artwork: bool,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct AlbumArtwork {
+    pub data: String, // Base64 encoded image data
+    pub mime_type: String,
 }
 
 #[derive(Debug, Clone)]
@@ -373,6 +381,7 @@ impl AudioPlayer {
             sample_rate: None,
             channels: None,
             bits_per_sample: None,
+            has_artwork: false,
         };
 
         // Get duration
@@ -406,6 +415,13 @@ impl AudioPlayer {
         // Get metadata from tags
         if let Some(metadata_rev) = format.metadata().current() {
             println!("Found {} tags", metadata_rev.tags().len());
+            
+            // Check for album artwork
+            if !metadata_rev.visuals().is_empty() {
+                metadata.has_artwork = true;
+                println!("Found {} album artwork(s)", metadata_rev.visuals().len());
+            }
+            
             for tag in metadata_rev.tags() {
                 println!("Tag: '{}' = '{}'", tag.key, tag.value);
                 match tag.key.as_str() {
@@ -457,5 +473,60 @@ impl AudioPlayer {
         }
 
         Ok(metadata)
+    }
+
+    pub fn get_album_artwork(file_path: &str) -> Result<Option<AlbumArtwork>, String> {
+        let file = File::open(file_path).map_err(|e| format!("Failed to open file: {}", e))?;
+        let mss = MediaSourceStream::new(Box::new(file), Default::default());
+
+        let mut hint = Hint::new();
+        if let Some(extension) = Path::new(file_path).extension() {
+            if let Some(ext_str) = extension.to_str() {
+                hint.with_extension(ext_str);
+            }
+        }
+
+        let meta_opts: MetadataOptions = Default::default();
+        let fmt_opts: FormatOptions = Default::default();
+
+        let probed = symphonia::default::get_probe()
+            .format(&hint, mss, &fmt_opts, &meta_opts)
+            .map_err(|e| format!("Failed to probe format: {}", e))?;
+
+        let mut format = probed.format;
+        
+        // Get artwork from metadata
+        if let Some(metadata_rev) = format.metadata().current() {
+            // Look for front cover first, then any other artwork
+            let front_cover = metadata_rev.visuals()
+                .iter()
+                .find(|v| v.usage == Some(StandardVisualKey::FrontCover));
+            
+            let visual = front_cover.or_else(|| metadata_rev.visuals().first());
+            
+            if let Some(visual) = visual {
+                let mime_type = if visual.media_type.is_empty() {
+                    // Guess MIME type from data if not provided
+                    if visual.data.starts_with(&[0xFF, 0xD8, 0xFF]) {
+                        "image/jpeg".to_string()
+                    } else if visual.data.starts_with(&[0x89, 0x50, 0x4E, 0x47]) {
+                        "image/png".to_string()
+                    } else {
+                        "image/unknown".to_string()
+                    }
+                } else {
+                    visual.media_type.clone()
+                };
+                
+                let encoded = general_purpose::STANDARD.encode(&visual.data);
+                
+                return Ok(Some(AlbumArtwork {
+                    data: encoded,
+                    mime_type,
+                }));
+            }
+        }
+        
+        Ok(None)
     }
 }
