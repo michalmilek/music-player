@@ -2,7 +2,9 @@ mod audio;
 
 use audio::{AudioPlayer, TrackMetadata, AlbumArtwork};
 use std::sync::{Arc, Mutex};
-use tauri::State;
+use std::path::Path;
+use tauri::{State, Emitter};
+use walkdir::WalkDir;
 
 struct AppState {
     player: Arc<Mutex<AudioPlayer>>,
@@ -90,6 +92,96 @@ fn get_album_artwork(path: String) -> Result<Option<AlbumArtwork>, String> {
     AudioPlayer::get_album_artwork(&path)
 }
 
+#[derive(serde::Serialize, Clone)]
+struct ScanProgress {
+    current: usize,
+    total: usize,
+    current_file: String,
+}
+
+#[tauri::command]
+async fn scan_music_folder(folder_path: String, window: tauri::Window) -> Result<Vec<String>, String> {
+    let path = Path::new(&folder_path);
+    
+    if !path.exists() || !path.is_dir() {
+        return Err("Invalid folder path".to_string());
+    }
+    
+    let mut music_files = Vec::new();
+    let extensions = ["mp3", "wav", "ogg", "flac", "m4a", "aac", "opus", "wma"];
+    
+    // First, count total files for progress
+    let total_files: usize = WalkDir::new(&folder_path)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.file_type().is_file())
+        .filter(|e| {
+            if let Some(ext) = e.path().extension() {
+                extensions.contains(&ext.to_str().unwrap_or("").to_lowercase().as_str())
+            } else {
+                false
+            }
+        })
+        .count();
+    
+    let mut current = 0;
+    
+    // Now scan and collect files
+    for entry in WalkDir::new(&folder_path)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.file_type().is_file())
+    {
+        if let Some(ext) = entry.path().extension() {
+            if extensions.contains(&ext.to_str().unwrap_or("").to_lowercase().as_str()) {
+                if let Some(path_str) = entry.path().to_str() {
+                    music_files.push(path_str.to_string());
+                    current += 1;
+                    
+                    // Emit progress event
+                    let _ = window.emit("scan-progress", ScanProgress {
+                        current,
+                        total: total_files,
+                        current_file: path_str.to_string(),
+                    });
+                }
+            }
+        }
+    }
+    
+    Ok(music_files)
+}
+
+#[derive(serde::Serialize)]
+struct MusicFileInfo {
+    path: String,
+    name: String,
+    metadata: Option<TrackMetadata>,
+}
+
+#[tauri::command]
+async fn get_music_files_metadata(paths: Vec<String>) -> Result<Vec<MusicFileInfo>, String> {
+    let mut files_info = Vec::new();
+    
+    for path in paths {
+        let name = Path::new(&path)
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or(&path)
+            .to_string();
+        
+        let metadata = AudioPlayer::get_track_metadata(&path).ok();
+        
+        files_info.push(MusicFileInfo {
+            path,
+            name,
+            metadata,
+        });
+    }
+    
+    Ok(files_info)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let player = AudioPlayer::new().expect("Failed to initialize audio player");
@@ -114,7 +206,9 @@ pub fn run() {
             set_equalizer_band,
             set_equalizer_preset,
             enable_equalizer,
-            get_album_artwork
+            get_album_artwork,
+            scan_music_folder,
+            get_music_files_metadata
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -8,6 +8,7 @@ import {
   SkipForward,
   Volume2,
   FolderOpen,
+  FolderSearch,
   Music,
   Trash2,
   RotateCcw,
@@ -21,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { AudioVisualizer } from "./components/AudioVisualizer";
 import { Equalizer } from "./components/Equalizer";
 import { MiniPlayer } from "./components/MiniPlayer";
+import { MusicLibraryImport } from "./components/MusicLibraryImport";
 
 interface TrackMetadata {
   title: string | null;
@@ -68,6 +70,7 @@ function App() {
   const [equalizerEnabled, setEqualizerEnabled] = useState(false);
   const [isMiniPlayer, setIsMiniPlayer] = useState(false);
   const [currentArtwork, setCurrentArtwork] = useState<string | null>(null);
+  const [showLibraryImport, setShowLibraryImport] = useState(false);
 
   // Load data from localStorage on app start
   useEffect(() => {
@@ -182,6 +185,27 @@ function App() {
 
       setPlaylist([...playlist, ...songs]);
     }
+  };
+
+  const handleLibraryImport = (importedFiles: any[]) => {
+    const songs: Song[] = importedFiles.map(file => ({
+      path: file.path,
+      name: file.metadata?.title || file.name,
+      metadata: file.metadata ? {
+        ...file.metadata,
+        track_number: null,
+        year: null,
+        genre: null,
+        codec: null,
+        sample_rate: null,
+        channels: null,
+        bits_per_sample: null,
+        has_artwork: false
+      } : undefined
+    }));
+
+    setPlaylist([...playlist, ...songs]);
+    setShowLibraryImport(false);
   };
 
   const loadArtwork = async (songPath: string) => {
@@ -462,13 +486,22 @@ function App() {
               <p className="text-muted-foreground mb-6">
                 The player controls are at the bottom of your screen
               </p>
-              <button
-                onClick={loadMusic}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-              >
-                <FolderOpen className="w-5 h-5" />
-                Add Music
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={loadMusic}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                >
+                  <FolderOpen className="w-5 h-5" />
+                  Add Files
+                </button>
+                <button
+                  onClick={() => setShowLibraryImport(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-muted transition-colors"
+                >
+                  <FolderSearch className="w-5 h-5" />
+                  Import Library
+                </button>
+              </div>
             </div>
             
             {/* Playlist in mini mode */}
@@ -564,23 +597,30 @@ function App() {
       <div className="flex-1 flex">
         {/* Playlist */}
         <aside className="w-80 border-r p-4 overflow-y-auto">
-          <div className="flex items-center justify-between mb-4 gap-2">
-            <h2 className="text-lg font-semibold">Playlist</h2>
-            <div className="flex gap-3">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold mb-2">Playlist</h2>
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={clearPlaylist}
                 disabled={playlist.length === 0}
-                className="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-2 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
                 Clear
               </button>
               <button
-                onClick={loadMusic}
-                className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                onClick={() => setShowLibraryImport(true)}
+                className="flex items-center gap-1.5 px-2 py-1 text-sm border rounded-md hover:bg-muted transition-colors"
               >
-                <FolderOpen className="w-4 h-4" />
-                Add Music
+                <FolderSearch className="w-3.5 h-3.5" />
+                Import
+              </button>
+              <button
+                onClick={loadMusic}
+                className="flex items-center gap-1.5 px-2 py-1 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+              >
+                <FolderOpen className="w-3.5 h-3.5" />
+                Add Files
               </button>
             </div>
           </div>
@@ -968,6 +1008,14 @@ function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Music Library Import */}
+      {showLibraryImport && (
+        <MusicLibraryImport
+          onImport={handleLibraryImport}
+          onClose={() => setShowLibraryImport(false)}
+        />
       )}
     </div>
   );

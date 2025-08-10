@@ -27,4 +27,5 @@ rodio = "0.19"
 symphonia = { version = "0.5", features = ["mp3", "wav", "flac", "ogg", "aac"] }
 tokio = { version = "1", features = ["full"] }
 base64 = "0.21"
+walkdir = "2"
 
