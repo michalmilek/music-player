@@ -3,6 +3,7 @@ mod audio;
 use audio::{AudioPlayer, TrackMetadata, AlbumArtwork};
 use std::sync::{Arc, Mutex};
 use std::path::Path;
+use std::fs;
 use tauri::{State, Emitter};
 use walkdir::WalkDir;
 
@@ -182,6 +183,12 @@ async fn get_music_files_metadata(paths: Vec<String>) -> Result<Vec<MusicFileInf
     Ok(files_info)
 }
 
+#[tauri::command]
+fn save_playlist_file(path: String, content: String) -> Result<(), String> {
+    fs::write(&path, content)
+        .map_err(|e| format!("Failed to save playlist: {}", e))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let player = AudioPlayer::new().expect("Failed to initialize audio player");
@@ -208,7 +215,8 @@ pub fn run() {
             enable_equalizer,
             get_album_artwork,
             scan_music_folder,
-            get_music_files_metadata
+            get_music_files_metadata,
+            save_playlist_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

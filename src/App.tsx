@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { Music, HelpCircle, X, Minimize2, FolderOpen, FolderSearch } from "lucide-react";
+import { Music, HelpCircle, X, Minimize2, FolderOpen, FolderSearch, Download } from "lucide-react";
 import { Song, TrackMetadata } from "./types/music";
 import { useAudioPlayer } from "./hooks/useAudioPlayer";
 import { Playlist } from "./components/Playlist";
@@ -13,6 +13,7 @@ import { SkipControls } from "./components/SkipControls";
 import { PlaybackInfo } from "./components/PlaybackInfo";
 import { MiniPlayer } from "./components/MiniPlayer";
 import { MusicLibraryImport } from "./components/MusicLibraryImport";
+import { PlaylistExport } from "./components/PlaylistExport";
 
 function App() {
   const {
@@ -41,6 +42,7 @@ function App() {
   const [equalizerEnabled, setEqualizerEnabled] = useState(false);
   const [isMiniPlayer, setIsMiniPlayer] = useState(false);
   const [showLibraryImport, setShowLibraryImport] = useState(false);
+  const [showPlaylistExport, setShowPlaylistExport] = useState(false);
   const [skipAmount, setSkipAmount] = useState(10);
 
   // Load skip amount from localStorage
@@ -227,6 +229,14 @@ function App() {
                   <FolderSearch className="w-5 h-5" />
                   Import Library
                 </button>
+                <button
+                  onClick={() => setShowPlaylistExport(true)}
+                  disabled={playlist.length === 0}
+                  className="inline-flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Download className="w-5 h-5" />
+                  Export Playlist
+                </button>
               </div>
             </div>
             
@@ -320,6 +330,7 @@ function App() {
           onClearPlaylist={clearPlaylist}
           onLoadMusic={loadMusic}
           onImportLibrary={() => setShowLibraryImport(true)}
+          onExportPlaylist={() => setShowPlaylistExport(true)}
         />
 
         {/* Now Playing */}
@@ -462,6 +473,14 @@ function App() {
         <MusicLibraryImport
           onImport={handleLibraryImport}
           onClose={() => setShowLibraryImport(false)}
+        />
+      )}
+
+      {/* Playlist Export */}
+      {showPlaylistExport && (
+        <PlaylistExport
+          playlist={playlist}
+          onClose={() => setShowPlaylistExport(false)}
         />
       )}
     </div>

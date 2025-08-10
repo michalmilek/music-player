@@ -1,5 +1,5 @@
 import { Song } from "../types/music";
-import { Trash2, FolderSearch, FolderOpen } from "lucide-react";
+import { Trash2, FolderSearch, FolderOpen, Download } from "lucide-react";
 
 interface PlaylistProps {
   playlist: Song[];
@@ -8,6 +8,7 @@ interface PlaylistProps {
   onClearPlaylist: () => void;
   onLoadMusic: () => void;
   onImportLibrary: () => void;
+  onExportPlaylist: () => void;
 }
 
 export function Playlist({
@@ -17,6 +18,7 @@ export function Playlist({
   onClearPlaylist,
   onLoadMusic,
   onImportLibrary,
+  onExportPlaylist,
 }: PlaylistProps) {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -36,6 +38,14 @@ export function Playlist({
           >
             <Trash2 className="w-3.5 h-3.5" />
             Clear
+          </button>
+          <button
+            onClick={onExportPlaylist}
+            disabled={playlist.length === 0}
+            className="flex items-center gap-1.5 px-2 py-1 text-sm border rounded-md hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export
           </button>
           <button
             onClick={onImportLibrary}
