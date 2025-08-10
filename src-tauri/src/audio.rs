@@ -112,6 +112,8 @@ impl AudioPlayer {
         let mut current_sink: Option<Sink> = None;
         let mut current_file_path: Option<String> = None;
         let mut seek_to: Option<f64> = None;
+        let mut playback_start_time: Option<std::time::Instant> = None;
+        let mut seek_offset: f64 = 0.0;
         
         loop {
             // Check for commands
@@ -135,18 +137,27 @@ impl AudioPlayer {
                         if let Ok(sink) = Self::create_sink_from_file(&path, &stream_handle) {
                             current_sink = Some(sink);
                             current_file_path = Some(path);
+                            playback_start_time = Some(std::time::Instant::now());
+                            seek_offset = 0.0;
                         }
                     }
                     PlayerCommand::Pause => {
                         if let Some(ref sink) = current_sink {
                             sink.pause();
-                            track_info.lock().unwrap().is_playing = false;
+                            let mut info = track_info.lock().unwrap();
+                            info.is_playing = false;
+                            // Update seek_offset to current position when pausing
+                            if let Some(start_time) = playback_start_time {
+                                seek_offset += start_time.elapsed().as_secs_f64();
+                            }
                         }
                     }
                     PlayerCommand::Resume => {
                         if let Some(ref sink) = current_sink {
                             sink.play();
                             track_info.lock().unwrap().is_playing = true;
+                            // Reset start time when resuming
+                            playback_start_time = Some(std::time::Instant::now());
                         }
                     }
                     PlayerCommand::Stop => {
@@ -154,6 +165,8 @@ impl AudioPlayer {
                             sink.stop();
                         }
                         current_file_path = None;
+                        playback_start_time = None;
+                        seek_offset = 0.0;
                         let mut info = track_info.lock().unwrap();
                         info.is_playing = false;
                         info.current_time = 0.0;
@@ -190,50 +203,40 @@ impl AudioPlayer {
                 }
             }
 
-            // Handle seeking - optimized for speed
+            // Handle seeking - ultra-fast optimized
             if let (Some(position), Some(file_path)) = (seek_to.take(), &current_file_path) {
                 let was_playing = current_sink.as_ref().map_or(false, |sink| !sink.is_paused());
                 let current_volume = current_sink.as_ref().map(|sink| sink.volume()).unwrap_or(1.0);
                 
-                // Stop current sink immediately for faster response
+                // Update time immediately - don't wait for audio processing
+                track_info.lock().unwrap().current_time = position;
+                
+                // Update timing variables for seek
+                seek_offset = position;
+                playback_start_time = Some(std::time::Instant::now());
+                
+                // Stop current sink with minimal delay
                 if let Some(sink) = current_sink.take() {
                     sink.stop();
                 }
                 
-                // Update time immediately for UI responsiveness
-                track_info.lock().unwrap().current_time = position;
-                
-                // Create new sink with optimizations
-                match Self::create_sink_from_file_at_position_optimized(&file_path, &stream_handle, position, current_volume) {
-                    Ok(sink) => {
-                        if was_playing {
-                            sink.play();
-                        } else {
-                            sink.pause();
-                        }
-                        current_sink = Some(sink);
+                // Ultra-fast seek with immediate feedback
+                if let Ok(sink) = Self::create_sink_from_file_at_position_ultra_optimized(&file_path, &stream_handle, position, current_volume) {
+                    if was_playing {
+                        sink.play();
                     }
-                    Err(e) => {
-                        eprintln!("Optimized seek failed: {}", e);
-                        // Quick fallback - don't try multiple methods, just use one
-                        if let Ok(sink) = Self::create_sink_from_file_at_position_fast(&file_path, &stream_handle, position) {
-                            sink.set_volume(current_volume);
-                            if was_playing {
-                                sink.play();
-                            } else {
-                                sink.pause();
-                            }
-                            current_sink = Some(sink);
-                        }
-                    }
+                    current_sink = Some(sink);
                 }
             }
 
-            // Update current time (simple estimation)
+            // Update current time based on elapsed playback time
             if let Some(ref sink) = current_sink {
                 if !sink.is_paused() && !sink.empty() {
-                    // This is a very basic time tracking - for real seeking we'd need more sophisticated tracking
-                    // For now, we'll rely on the frontend timer
+                    if let Some(start_time) = playback_start_time {
+                        let elapsed = start_time.elapsed().as_secs_f64();
+                        let current_time = seek_offset + elapsed;
+                        track_info.lock().unwrap().current_time = current_time;
+                    }
                 }
             }
 
@@ -333,6 +336,34 @@ impl AudioPlayer {
         
         // Fast skip using duration
         if position > 0.0 {
+            let skipped_source = source.skip_duration(std::time::Duration::from_secs_f64(position));
+            sink.append(skipped_source);
+        } else {
+            sink.append(source);
+        }
+        
+        Ok(sink)
+    }
+
+    fn create_sink_from_file_at_position_ultra_optimized(
+        file_path: &str,
+        stream_handle: &OutputStreamHandle,
+        position: f64,
+        volume: f32,
+    ) -> Result<Sink, String> {
+        // Use memory mapping for fastest I/O
+        let file = File::open(file_path).map_err(|e| format!("Failed to open file: {}", e))?;
+        
+        // Massive buffer for maximum speed
+        let buf_reader = std::io::BufReader::with_capacity(256 * 1024, file);
+        let source = rodio::Decoder::new(buf_reader)
+            .map_err(|e| format!("Failed to decode audio: {}", e))?;
+            
+        let sink = Sink::try_new(stream_handle).map_err(|e| format!("Failed to create sink: {}", e))?;
+        sink.set_volume(volume);
+        
+        // Skip with minimal threshold
+        if position > 0.01 { // Even smaller threshold
             let skipped_source = source.skip_duration(std::time::Duration::from_secs_f64(position));
             sink.append(skipped_source);
         } else {

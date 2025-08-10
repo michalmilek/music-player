@@ -52,6 +52,28 @@ export function useAudioPlayer() {
     localStorage.setItem('musicPlayerVolume', volume.toString());
   }, [volume]);
 
+  // Periodic timer to update current time from backend
+  useEffect(() => {
+    let interval: number | null = null;
+    
+    if (isPlaying && currentSong) {
+      interval = window.setInterval(async () => {
+        try {
+          const backendTime = await invoke<number>("get_current_time");
+          setCurrentTime(backendTime);
+        } catch (error) {
+          console.warn("Failed to get current time:", error);
+        }
+      }, 100); // Update every 100ms for smooth progress
+    }
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [isPlaying, currentSong]);
+
   const addToHistory = useCallback((song: Song) => {
     setPlayHistory(prev => {
       const existingEntry = prev.find(entry => entry.song.path === song.path);

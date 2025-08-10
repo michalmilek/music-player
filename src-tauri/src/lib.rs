@@ -1,4 +1,6 @@
 mod audio;
+mod symphonia_player;
+mod audio_new;
 
 use audio::{AudioPlayer, TrackMetadata, AlbumArtwork};
 use std::sync::{Arc, Mutex};
@@ -13,34 +15,34 @@ struct AppState {
 
 #[tauri::command]
 fn play_song(path: String, state: State<AppState>) -> Result<f32, String> {
-    let player = state.player.lock().unwrap();
+    let mut player = state.player.lock().unwrap();
     player.play(&path)
 }
 
 #[tauri::command]
 fn pause(state: State<AppState>) -> Result<(), String> {
-    let player = state.player.lock().unwrap();
+    let mut player = state.player.lock().unwrap();
     player.pause();
     Ok(())
 }
 
 #[tauri::command]
 fn resume(state: State<AppState>) -> Result<(), String> {
-    let player = state.player.lock().unwrap();
+    let mut player = state.player.lock().unwrap();
     player.resume();
     Ok(())
 }
 
 #[tauri::command]
 fn stop(state: State<AppState>) -> Result<(), String> {
-    let player = state.player.lock().unwrap();
+    let mut player = state.player.lock().unwrap();
     player.stop();
     Ok(())
 }
 
 #[tauri::command]
 fn set_volume(volume: f32, state: State<AppState>) -> Result<(), String> {
-    let player = state.player.lock().unwrap();
+    let mut player = state.player.lock().unwrap();
     player.set_volume(volume);
     Ok(())
 }
