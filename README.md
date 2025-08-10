@@ -160,6 +160,8 @@ npm run tauri build
 - [x] **Equalizer**: 10-pasmowy equalizer z presetami i regulacją częstotliwości
 - [x] **Mini-player mode**: Kompaktowy widok z kontrolkami na dole ekranu
 - [x] **Obsługa okładek albumów**: Automatyczne wyodrębnianie i wyświetlanie artwork z plików
+- [x] **Import biblioteki muzycznej**: Skanowanie folderów z progress tracking
+- [x] **Eksport playlist**: Zapisywanie do plików M3U, PLS, JSON
 
 ### ⌨️ Skróty klawiszowe
 - **Spacja** - Play/Pause
@@ -172,9 +174,85 @@ npm run tauri build
 - **Ctrl + H** - Show help
 - **Esc** - Close help
 
-### 🚧 W planach
-- [ ] **Import biblioteki muzycznej**: Skanowanie folderów
-- [ ] **Eksport playlist**: Zapisywanie do plików M3U/PLS
+## 🗺️ Roadmap - Plan rozwoju
+
+### 🚧 Następne funkcje (Faza 1)
+- [ ] **Tryby odtwarzania**: Repeat (single/all), Shuffle, Linear
+- [ ] **System oceniania**: 5-gwiazdkowy rating system dla utworów
+- [ ] **Ulubione utwory**: Favoriting z szybkim dostępem
+- [ ] **Filtrowanie biblioteki**: Wyszukiwanie i filtrowanie według artysty, gatunku, roku
+- [ ] **Smart playlists**: Automatyczne playlisty na podstawie kryteriów
+- [ ] **Global hotkeys**: Systemowe skróty działające poza aplikacją
+
+### 🎯 Zaawansowane funkcje (Faza 2)
+- [ ] **Crossfade**: Płynne przejścia między utworami
+- [ ] **Gapless playback**: Odtwarzanie bez przerw między utworami
+- [ ] **A-B repeat**: Powtarzanie wybranych fragmentów
+- [ ] **Speed/pitch control**: Zmiana tempa i wysokości bez zmiany drugiego parametru
+- [ ] **Audio effects**: Reverb, echo, compressor, stereo widener
+- [ ] **Waveform display**: Wizualizacja fali dźwiękowej z możliwością nawigacji
+
+### 🌐 Funkcje społecznościowe (Faza 3)
+- [ ] **Last.fm integration**: Scrobbling i sync z profilem Last.fm
+- [ ] **Discord Rich Presence**: Wyświetlanie aktualnego utworu na Discord
+- [ ] **Spotify/YouTube Music sync**: Import playlist i metadata
+- [ ] **Social sharing**: Udostępnianie utworów i playlist
+- [ ] **Statistics export**: Raporty statystyk słuchania
+- [ ] **Music discovery**: Rekomendacje na podstawie historii
+
+### 🔧 Funkcje systemowe (Faza 4)
+- [ ] **System tray integration**: Minimalizacja do zasobnika systemowego
+- [ ] **Sleep timer**: Automatyczne wyłączenie po określonym czasie
+- [ ] **Auto-pause**: Pauza przy zdarzeniach systemowych (rozmowy, inne audio)
+- [ ] **Media keys support**: Obsługa klawiszy multimedialnych na klawiaturze
+- [ ] **Background optimization**: Zoptymalizowane zużycie CPU/RAM w tle
+- [ ] **Multi-language support**: Lokalizacja interfejsu (EN/PL/DE/FR)
+
+### 📚 Zarządzanie biblioteką (Faza 5)
+- [ ] **Tag editor**: Edycja metadanych (tytuł, artysta, album, rok, gatunek)
+- [ ] **Auto-tagging**: Automatyczne tagowanie na podstawie baz danych online
+- [ ] **Duplicate detection**: Wykrywanie i zarządzanie duplikatami
+- [ ] **File organization**: Automatyczne organizowanie plików według wzorców
+- [ ] **Album view**: Widok biblioteki według albumów z okładkami
+- [ ] **Artist view**: Grupowanie według wykonawców z dyskografią
+
+### 🎨 Personalizacja (Faza 6)
+- [ ] **Multiple themes**: Różne motywy kolorystyczne (Dark, Light, Colorful)
+- [ ] **Custom themes**: Kreator własnych motywów
+- [ ] **Layout customization**: Konfigurowalne układy interfejsu
+- [ ] **Visualizer themes**: Różne style wizualizacji audio
+- [ ] **Custom equalizer presets**: Zapisywanie własnych ustawień equalizera
+- [ ] **Widget system**: Konfigurowalne widgety w interfejsie
+
+### 🔮 Funkcje przyszłościowe (Faza 7+)
+- [ ] **Internet radio**: Obsługa stacji radiowych online
+- [ ] **Podcast support**: Odtwarzanie i zarządzanie podcastami
+- [ ] **Cloud sync**: Synchronizacja playlist i ustawień w chmurze
+- [ ] **Mobile companion**: Aplikacja na telefon jako pilot
+- [ ] **Plugin system**: API dla zewnętrznych rozszerzeń
+- [ ] **AI features**: Automatyczne tworzenie playlist, mood detection
+- [ ] **Lyrics display**: Wyświetlanie tekstów (LRC files + online sync)
+- [ ] **Karaoke mode**: Tryb karaoke z usuwaniem wokali
+
+## 📊 Priorytety rozwoju
+
+**Wysoki priorytet:**
+- Tryby odtwarzania (repeat/shuffle)
+- System oceniania i ulubione
+- Global hotkeys
+- Filtrowanie i wyszukiwanie
+
+**Średni priorytet:**
+- Crossfade i gapless playback
+- Audio effects
+- Last.fm integration
+- System tray
+
+**Niski priorytet:**
+- Cloud sync
+- Mobile app
+- AI features
+- Plugin system
 
 ## 🛠️ Rozwój
 
