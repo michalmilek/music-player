@@ -1,5 +1,6 @@
 import { Song } from "../types/music";
-import { Trash2, FolderSearch, FolderOpen, Download } from "lucide-react";
+import { Trash2, FolderSearch, FolderOpen, Download, GripVertical } from "lucide-react";
+import { useState } from "react";
 
 interface PlaylistProps {
   playlist: Song[];
@@ -9,6 +10,7 @@ interface PlaylistProps {
   onLoadMusic: () => void;
   onImportLibrary: () => void;
   onExportPlaylist: () => void;
+  onReorderPlaylist: (fromIndex: number, toIndex: number) => void;
 }
 
 export function Playlist({
@@ -19,11 +21,45 @@ export function Playlist({
   onLoadMusic,
   onImportLibrary,
   onExportPlaylist,
+  onReorderPlaylist,
 }: PlaylistProps) {
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', index.toString());
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex !== null && draggedIndex !== dropIndex) {
+      onReorderPlaylist(draggedIndex, dropIndex);
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   return (
@@ -66,19 +102,39 @@ export function Playlist({
       <div className="space-y-1">
         {playlist.map((song, index) => (
           <div
-            key={index}
-            onClick={() => onSongSelect(song)}
-            className={`p-3 rounded-md cursor-pointer transition-colors ${
-              currentSong?.path === song.path
-                ? 'bg-accent text-accent-foreground'
-                : 'hover:bg-muted'
+            key={`${song.path}-${index}`}
+            draggable
+            onDragStart={(e) => handleDragStart(e, index)}
+            onDragOver={(e) => handleDragOver(e, index)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, index)}
+            onDragEnd={handleDragEnd}
+            className={`p-3 rounded-md transition-colors group relative ${
+              draggedIndex === index 
+                ? 'opacity-50 scale-95 bg-primary/10' 
+                : dragOverIndex === index && draggedIndex !== null
+                  ? 'border-2 border-primary border-dashed bg-primary/5'
+                  : currentSong?.path === song.path
+                    ? 'bg-accent text-accent-foreground cursor-pointer'
+                    : 'hover:bg-muted cursor-pointer'
             }`}
           >
             <div className="flex items-center gap-3">
-              <span className="text-muted-foreground text-sm w-6 text-center">
-                {song.metadata?.track_number || index + 1}
-              </span>
-              <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <div 
+                  className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  <GripVertical className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <span className="text-muted-foreground text-sm w-6 text-center">
+                  {song.metadata?.track_number || index + 1}
+                </span>
+              </div>
+              <div 
+                className="flex-1 min-w-0"
+                onClick={() => onSongSelect(song)}
+              >
                 <div className="truncate font-medium">{song.name}</div>
                 {song.metadata?.artist && (
                   <div className="text-sm text-muted-foreground truncate">
@@ -88,7 +144,10 @@ export function Playlist({
                 )}
               </div>
               {song.metadata?.duration && (
-                <span className="text-sm text-muted-foreground">
+                <span 
+                  className="text-sm text-muted-foreground"
+                  onClick={() => onSongSelect(song)}
+                >
                   {formatTime(song.metadata.duration)}
                 </span>
               )}

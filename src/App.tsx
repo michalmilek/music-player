@@ -37,6 +37,7 @@ function App() {
     clearPlaylist,
     clearHistory,
     addSongsToPlaylist,
+    reorderPlaylist,
     togglePlaybackMode,
   } = useAudioPlayer();
 
@@ -333,6 +334,7 @@ function App() {
           onLoadMusic={loadMusic}
           onImportLibrary={() => setShowLibraryImport(true)}
           onExportPlaylist={() => setShowPlaylistExport(true)}
+          onReorderPlaylist={reorderPlaylist}
         />
 
         {/* Now Playing */}

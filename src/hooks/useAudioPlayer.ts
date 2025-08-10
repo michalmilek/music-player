@@ -476,6 +476,15 @@ export function useAudioPlayer() {
     setPlaylist(prev => [...prev, ...songs]);
   }, []);
 
+  const reorderPlaylist = useCallback((fromIndex: number, toIndex: number) => {
+    setPlaylist(prev => {
+      const newPlaylist = [...prev];
+      const [draggedItem] = newPlaylist.splice(fromIndex, 1);
+      newPlaylist.splice(toIndex, 0, draggedItem);
+      return newPlaylist;
+    });
+  }, []);
+
   const togglePlaybackMode = useCallback(() => {
     const modes = [PlaybackMode.Linear, PlaybackMode.RepeatAll, PlaybackMode.RepeatOne, PlaybackMode.Shuffle];
     const currentIndex = modes.indexOf(playbackMode);
@@ -511,6 +520,7 @@ export function useAudioPlayer() {
     clearPlaylist,
     clearHistory,
     addSongsToPlaylist,
+    reorderPlaylist,
     togglePlaybackMode,
     setCurrentTime,
   };
