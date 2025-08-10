@@ -14,6 +14,7 @@ export function useAudioPlayer() {
   const [playbackMode, setPlaybackMode] = useState<PlaybackMode>(PlaybackMode.Linear);
   const [shuffleHistory, setShuffleHistory] = useState<number[]>([]);
   const [songRatings, setSongRatings] = useState<{[path: string]: number}>({});
+  const [songFavorites, setSongFavorites] = useState<{[path: string]: boolean}>({});
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -22,6 +23,7 @@ export function useAudioPlayer() {
     const savedVolume = localStorage.getItem('musicPlayerVolume');
     const savedMode = localStorage.getItem('musicPlayerMode');
     const savedRatings = localStorage.getItem('musicPlayerRatings');
+    const savedFavorites = localStorage.getItem('musicPlayerFavorites');
 
     if (savedPlaylist) {
       try {
@@ -54,6 +56,14 @@ export function useAudioPlayer() {
         console.error('Error loading ratings:', error);
       }
     }
+
+    if (savedFavorites) {
+      try {
+        setSongFavorites(JSON.parse(savedFavorites));
+      } catch (error) {
+        console.error('Error loading favorites:', error);
+      }
+    }
   }, []);
 
   // Save data to localStorage
@@ -76,6 +86,10 @@ export function useAudioPlayer() {
   useEffect(() => {
     localStorage.setItem('musicPlayerRatings', JSON.stringify(songRatings));
   }, [songRatings]);
+
+  useEffect(() => {
+    localStorage.setItem('musicPlayerFavorites', JSON.stringify(songFavorites));
+  }, [songFavorites]);
 
   // Periodic timer to update current time from backend
   useEffect(() => {
@@ -521,10 +535,22 @@ export function useAudioPlayer() {
     return songRatings[songPath] || 0;
   }, [songRatings]);
 
-  // Create playlist with ratings attached
+  const toggleSongFavorite = useCallback((songPath: string) => {
+    setSongFavorites(prev => ({
+      ...prev,
+      [songPath]: !prev[songPath]
+    }));
+  }, []);
+
+  const getSongFavorite = useCallback((songPath: string): boolean => {
+    return songFavorites[songPath] || false;
+  }, [songFavorites]);
+
+  // Create playlist with ratings and favorites attached
   const playlistWithRatings = playlist.map(song => ({
     ...song,
-    rating: getSongRating(song.path)
+    rating: getSongRating(song.path),
+    isFavorite: getSongFavorite(song.path)
   }));
 
   return {
@@ -556,6 +582,8 @@ export function useAudioPlayer() {
     togglePlaybackMode,
     setSongRating,
     getSongRating,
+    toggleSongFavorite,
+    getSongFavorite,
     setCurrentTime,
   };
 }

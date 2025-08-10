@@ -42,6 +42,8 @@ function App() {
     togglePlaybackMode,
     setSongRating,
     getSongRating,
+    toggleSongFavorite,
+    getSongFavorite,
   } = useAudioPlayer();
 
   const [showHelp, setShowHelp] = useState(false);
@@ -339,6 +341,7 @@ function App() {
           onExportPlaylist={() => setShowPlaylistExport(true)}
           onReorderPlaylist={reorderPlaylist}
           onSetRating={setSongRating}
+          onToggleFavorite={toggleSongFavorite}
         />
 
         {/* Now Playing */}
@@ -346,9 +349,10 @@ function App() {
           <div className="flex-1 p-8">
             <div className="max-w-4xl mx-auto">
               <NowPlaying 
-                currentSong={currentSong ? {...currentSong, rating: getSongRating(currentSong.path)} : null}
+                currentSong={currentSong ? {...currentSong, rating: getSongRating(currentSong.path), isFavorite: getSongFavorite(currentSong.path)} : null}
                 currentArtwork={currentArtwork}
                 onSetRating={setSongRating}
+                onToggleFavorite={toggleSongFavorite}
               />
 
               <PlaybackInfo

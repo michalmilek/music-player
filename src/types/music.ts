@@ -23,6 +23,7 @@ export interface Song {
   name: string;
   metadata?: TrackMetadata;
   rating?: number; // 0-5 stars
+  isFavorite?: boolean;
 }
 
 export interface PlayHistoryEntry {

@@ -34,6 +34,8 @@ Odtwarzacz muzyczny zbudowany w Tauri z React, TypeScript, Tailwind CSS i shadcn
 - 🌙 **Dark mode ready**: Wsparcie dla ciemnego motywu
 - 🔄 **Tryby odtwarzania**: Linear, Repeat All, Repeat One, Shuffle z automatycznym przełączaniem
 - 🎯 **Drag & Drop**: Przeciągnij i upuść utwory żeby zmienić kolejność w playliście
+- ⭐ **System oceniania**: 5-gwiazdkowy rating system dla utworów z persistentnym zapisem
+- ❤️ **Ulubione utwory**: Favoriting z szybkim dostępem i filtrowaniem playlisty
 
 ## 📱 Interfejs użytkownika
 
@@ -54,6 +56,8 @@ Odtwarzacz muzyczny zbudowany w Tauri z React, TypeScript, Tailwind CSS i shadcn
 - **Przeciągnij pasek postępu** aby płynnie przewijać
 - **Dostosuj skip amount** (1-60s) i używaj przycisków +/- lub Shift+strzałki
 - **Przeciągnij utwory** w playliście żeby zmienić kolejność (pojawi się ⋮⋮ przy hover)
+- **Oceń utwory** klikając gwiazdki (0-5 gwiazdek) - wypełnione gwiazdki dla lepszej widoczności
+- **Dodaj do ulubionych** klikając serce - filtruj playlistę pokazując tylko ulubione
 - **Wszystkie ustawienia** są automatycznie zapisywane
 
 ## 🚀 Rozpoczęcie pracy
@@ -167,6 +171,8 @@ npm run tauri build
 - [x] **Eksport playlist**: Zapisywanie do plików M3U, PLS, JSON
 - [x] **Tryby odtwarzania**: Repeat One, Repeat All, Shuffle, Linear z automatycznym przełączaniem utworów
 - [x] **Drag & Drop playlist**: Przeciągnij i upuść utwory żeby zmienić kolejność z wizualnymi wskazaniami
+- [x] **System oceniania**: 5-gwiazdkowy rating system z wypełnionymi gwiazdkami i zapisem do localStorage
+- [x] **Ulubione utwory**: Favoriting z przyciskiem serca, filtrowaniem playlisty i persistencją
 
 ### ⌨️ Skróty klawiszowe
 - **Spacja** - Play/Pause
@@ -183,8 +189,8 @@ npm run tauri build
 
 ### 🚧 Następne funkcje (Faza 1)
 - [x] **Tryby odtwarzania**: Repeat (single/all), Shuffle, Linear
-- [ ] **System oceniania**: 5-gwiazdkowy rating system dla utworów
-- [ ] **Ulubione utwory**: Favoriting z szybkim dostępem
+- [x] **System oceniania**: 5-gwiazdkowy rating system dla utworów
+- [x] **Ulubione utwory**: Favoriting z szybkim dostępem
 - [ ] **Filtrowanie biblioteki**: Wyszukiwanie i filtrowanie według artysty, gatunku, roku
 - [ ] **Smart playlists**: Automatyczne playlisty na podstawie kryteriów
 - [ ] **Global hotkeys**: Systemowe skróty działające poza aplikacją
@@ -242,8 +248,8 @@ npm run tauri build
 ## 📊 Priorytety rozwoju
 
 **Wysoki priorytet:**
-- Tryby odtwarzania (repeat/shuffle)
-- System oceniania i ulubione
+- ~~Tryby odtwarzania (repeat/shuffle)~~ ✅ Zrobione
+- ~~System oceniania i ulubione~~ ✅ Zrobione  
 - Global hotkeys
 - Filtrowanie i wyszukiwanie
 

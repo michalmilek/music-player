@@ -34,7 +34,8 @@ export function StarRating({
     }
   };
 
-  const handleStarClick = (starRating: number) => {
+  const handleStarClick = (e: React.MouseEvent, starRating: number) => {
+    e.stopPropagation(); // Prevent event bubbling to parent elements
     if (readonly || !onRatingChange) return;
     
     // If clicking on the same star, toggle between that rating and 0
@@ -65,7 +66,7 @@ export function StarRating({
             key={star}
             type="button"
             disabled={readonly}
-            onClick={() => handleStarClick(star)}
+            onClick={(e) => handleStarClick(e, star)}
             onMouseEnter={() => handleStarHover(star)}
             className={`
               ${getSizeClasses()}
@@ -75,13 +76,13 @@ export function StarRating({
                 : 'cursor-pointer hover:scale-110 transform transition-transform'
               }
               ${star <= displayRating 
-                ? 'text-yellow-400 fill-current' 
+                ? 'text-yellow-400' 
                 : 'text-gray-300 hover:text-yellow-300'
               }
             `}
             title={readonly ? `${rating} out of 5 stars` : `Rate ${star} star${star > 1 ? 's' : ''}`}
           >
-            <Star className={getSizeClasses()} />
+            <Star className={`${getSizeClasses()} ${star <= displayRating ? 'fill-current' : ''}`} />
           </button>
         ))}
       </div>

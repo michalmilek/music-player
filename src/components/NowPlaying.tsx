@@ -1,14 +1,16 @@
 import { Music } from "lucide-react";
 import { Song } from "../types/music";
 import { StarRating } from "./StarRating";
+import { FavoriteButton } from "./FavoriteButton";
 
 interface NowPlayingProps {
   currentSong: Song | null;
   currentArtwork: string | null;
   onSetRating?: (songPath: string, rating: number) => void;
+  onToggleFavorite?: (songPath: string) => void;
 }
 
-export function NowPlaying({ currentSong, currentArtwork, onSetRating }: NowPlayingProps) {
+export function NowPlaying({ currentSong, currentArtwork, onSetRating, onToggleFavorite }: NowPlayingProps) {
   return (
     <div className="text-center mb-8">
       <div className="w-64 h-64 bg-muted rounded-lg overflow-hidden mx-auto mb-6">
@@ -32,13 +34,22 @@ export function NowPlaying({ currentSong, currentArtwork, onSetRating }: NowPlay
           {currentSong.metadata.artist}
         </p>
       )}
-      {currentSong && onSetRating && (
-        <div className="flex justify-center">
-          <StarRating
-            rating={currentSong.rating || 0}
-            onRatingChange={(rating) => onSetRating(currentSong.path, rating)}
-            size="lg"
-          />
+      {currentSong && (onSetRating || onToggleFavorite) && (
+        <div className="flex justify-center items-center gap-4">
+          {onSetRating && (
+            <StarRating
+              rating={currentSong.rating || 0}
+              onRatingChange={(rating) => onSetRating(currentSong.path, rating)}
+              size="lg"
+            />
+          )}
+          {onToggleFavorite && (
+            <FavoriteButton
+              isFavorite={currentSong.isFavorite || false}
+              onToggleFavorite={() => onToggleFavorite(currentSong.path)}
+              size="lg"
+            />
+          )}
         </div>
       )}
     </div>

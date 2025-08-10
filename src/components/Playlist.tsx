@@ -1,7 +1,8 @@
 import { Song } from "../types/music";
-import { Trash2, FolderSearch, FolderOpen, Download, GripVertical } from "lucide-react";
+import { Trash2, FolderSearch, FolderOpen, Download, GripVertical, Heart } from "lucide-react";
 import { useState } from "react";
 import { StarRating } from "./StarRating";
+import { FavoriteButton } from "./FavoriteButton";
 
 interface PlaylistProps {
   playlist: Song[];
@@ -13,6 +14,7 @@ interface PlaylistProps {
   onExportPlaylist: () => void;
   onReorderPlaylist: (fromIndex: number, toIndex: number) => void;
   onSetRating: (songPath: string, rating: number) => void;
+  onToggleFavorite: (songPath: string) => void;
 }
 
 export function Playlist({
@@ -25,9 +27,11 @@ export function Playlist({
   onExportPlaylist,
   onReorderPlaylist,
   onSetRating,
+  onToggleFavorite,
 }: PlaylistProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -65,10 +69,34 @@ export function Playlist({
     setDragOverIndex(null);
   };
 
+  const filteredPlaylist = showOnlyFavorites 
+    ? playlist.filter(song => song.isFavorite) 
+    : playlist;
+
+  const favoriteCount = playlist.filter(song => song.isFavorite).length;
+
   return (
     <aside className="w-80 border-r p-4 overflow-y-auto">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold mb-2">Playlist</h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold">
+            Playlist {showOnlyFavorites ? `(${favoriteCount} favorites)` : `(${playlist.length} songs)`}
+          </h2>
+          <button
+            onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
+            disabled={favoriteCount === 0}
+            className={`
+              p-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+              ${showOnlyFavorites 
+                ? 'bg-red-100 text-red-600 hover:bg-red-200' 
+                : 'text-gray-400 hover:text-red-400 hover:bg-red-50'
+              }
+            `}
+            title={showOnlyFavorites ? "Show all songs" : "Show only favorites"}
+          >
+            <Heart className={`w-5 h-5 ${showOnlyFavorites ? 'fill-current' : ''}`} />
+          </button>
+        </div>
         <div className="flex flex-wrap gap-2">
           <button
             onClick={onClearPlaylist}
@@ -103,19 +131,21 @@ export function Playlist({
         </div>
       </div>
       <div className="space-y-1">
-        {playlist.map((song, index) => (
+        {filteredPlaylist.map((song, filteredIndex) => {
+          const originalIndex = playlist.findIndex(s => s.path === song.path);
+          return (
           <div
-            key={`${song.path}-${index}`}
-            draggable
-            onDragStart={(e) => handleDragStart(e, index)}
-            onDragOver={(e) => handleDragOver(e, index)}
+            key={`${song.path}-${filteredIndex}`}
+            draggable={!showOnlyFavorites}
+            onDragStart={(e) => handleDragStart(e, originalIndex)}
+            onDragOver={(e) => handleDragOver(e, originalIndex)}
             onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, index)}
+            onDrop={(e) => handleDrop(e, originalIndex)}
             onDragEnd={handleDragEnd}
             className={`p-3 rounded-md transition-colors group relative ${
-              draggedIndex === index 
+              draggedIndex === originalIndex 
                 ? 'opacity-50 scale-95 bg-primary/10' 
-                : dragOverIndex === index && draggedIndex !== null
+                : dragOverIndex === originalIndex && draggedIndex !== null
                   ? 'border-2 border-primary border-dashed bg-primary/5'
                   : currentSong?.path === song.path
                     ? 'bg-accent text-accent-foreground cursor-pointer'
@@ -131,7 +161,7 @@ export function Playlist({
                   <GripVertical className="w-4 h-4 text-muted-foreground" />
                 </div>
                 <span className="text-muted-foreground text-sm w-6 text-center">
-                  {song.metadata?.track_number || index + 1}
+                  {song.metadata?.track_number || originalIndex + 1}
                 </span>
               </div>
               <div 
@@ -145,10 +175,15 @@ export function Playlist({
                     {song.metadata.album && ` • ${song.metadata.album}`}
                   </div>
                 )}
-                <div className="mt-1">
+                <div className="mt-1 flex items-center gap-2">
                   <StarRating
                     rating={song.rating || 0}
                     onRatingChange={(rating) => onSetRating(song.path, rating)}
+                    size="sm"
+                  />
+                  <FavoriteButton
+                    isFavorite={song.isFavorite || false}
+                    onToggleFavorite={() => onToggleFavorite(song.path)}
                     size="sm"
                   />
                 </div>
@@ -163,7 +198,8 @@ export function Playlist({
               )}
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </aside>
   );
