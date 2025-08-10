@@ -4,35 +4,19 @@ interface ProgressBarProps {
   currentTime: number;
   duration: number;
   onSeek: (time: number) => void;
-  isPlaying: boolean;
 }
 
 export function ProgressBar({ 
-  currentTime: initialTime, 
+  currentTime: propCurrentTime, 
   duration, 
-  onSeek,
-  isPlaying 
+  onSeek
 }: ProgressBarProps) {
-  const [currentTime, setCurrentTime] = useState(initialTime);
   const [isDragging, setIsDragging] = useState(false);
+  const [dragTime, setDragTime] = useState(0);
   const progressRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setCurrentTime(initialTime);
-  }, [initialTime]);
-
-  useEffect(() => {
-    if (!isPlaying || isDragging) return;
-
-    const interval = setInterval(() => {
-      setCurrentTime(prev => {
-        const newTime = prev + 0.1;
-        return duration > 0 ? Math.min(newTime, duration) : newTime;
-      });
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [isPlaying, duration, isDragging]);
+  // Use prop time when not dragging, drag time when dragging
+  const displayTime = isDragging ? dragTime : propCurrentTime;
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -52,7 +36,6 @@ export function ProgressBar({
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (duration === 0 || isDragging) return;
     const newTime = calculateTimeFromEvent(e);
-    setCurrentTime(newTime);
     onSeek(newTime);
   };
 
@@ -60,7 +43,7 @@ export function ProgressBar({
     if (duration === 0) return;
     setIsDragging(true);
     const newTime = calculateTimeFromEvent(e);
-    setCurrentTime(newTime);
+    setDragTime(newTime);
   };
 
   useEffect(() => {
@@ -69,12 +52,12 @@ export function ProgressBar({
     const handleMouseMove = (e: MouseEvent) => {
       if (!progressRef.current) return;
       const newTime = calculateTimeFromEvent(e);
-      setCurrentTime(newTime);
+      setDragTime(newTime);
     };
 
     const handleMouseUp = () => {
       setIsDragging(false);
-      onSeek(currentTime);
+      onSeek(dragTime);
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -84,12 +67,12 @@ export function ProgressBar({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, currentTime, onSeek]);
+  }, [isDragging, dragTime, onSeek]);
 
   return (
     <div className="flex items-center gap-3">
       <span className="text-sm text-muted-foreground w-12 text-right">
-        {formatTime(currentTime)}
+        {formatTime(displayTime)}
       </span>
       <div 
         ref={progressRef}
@@ -100,8 +83,8 @@ export function ProgressBar({
         <div
           className="h-full bg-primary rounded-lg transition-all duration-100"
           style={{ 
-            width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
-            transition: isDragging ? 'none' : 'all 100ms'
+            width: `${duration > 0 ? (displayTime / duration) * 100 : 0}%`,
+            transition: isDragging ? 'none' : 'width 100ms ease'
           }}
         />
       </div>

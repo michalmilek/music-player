@@ -46,9 +46,15 @@ fn set_volume(volume: f32, state: State<AppState>) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn seek(position: f32, state: State<AppState>) -> Result<(), String> {
-    let player = state.player.lock().unwrap();
-    player.seek(position)
+async fn seek(position: f32, state: State<'_, AppState>) -> Result<(), String> {
+    // Use async to avoid blocking the main thread
+    let player_arc = state.player.clone();
+    
+    tokio::task::spawn_blocking(move || {
+        let player = player_arc.lock().unwrap();
+        player.seek(position)
+    }).await
+    .map_err(|e| format!("Seek task failed: {}", e))?
 }
 
 #[tauri::command]

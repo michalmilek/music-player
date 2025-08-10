@@ -149,11 +149,32 @@ export function useAudioPlayer() {
 
   const seek = useCallback(async (position: number) => {
     if (!currentSong) return;
+    
+    // Immediately update the UI for responsive feedback
     setCurrentTime(position);
+    
     try {
+      // Send seek command to backend
       await invoke("seek", { position });
+      
+      // After a short delay, sync with backend to ensure accuracy
+      setTimeout(async () => {
+        try {
+          const backendTime = await invoke<number>("get_current_time");
+          setCurrentTime(backendTime);
+        } catch (error) {
+          console.warn("Failed to sync time with backend:", error);
+        }
+      }, 100); // Small delay to let backend process the seek
     } catch (error) {
       console.warn("Seek failed:", error);
+      // On error, try to get the actual time from backend
+      try {
+        const backendTime = await invoke<number>("get_current_time");
+        setCurrentTime(backendTime);
+      } catch (syncError) {
+        console.warn("Failed to sync time after seek error:", syncError);
+      }
     }
   }, [currentSong]);
 

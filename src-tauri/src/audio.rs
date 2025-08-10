@@ -190,15 +190,42 @@ impl AudioPlayer {
                 }
             }
 
-            // Handle seeking
+            // Handle seeking - optimized for speed
             if let (Some(position), Some(file_path)) = (seek_to.take(), &current_file_path) {
+                let was_playing = current_sink.as_ref().map_or(false, |sink| !sink.is_paused());
+                let current_volume = current_sink.as_ref().map(|sink| sink.volume()).unwrap_or(1.0);
+                
+                // Stop current sink immediately for faster response
                 if let Some(sink) = current_sink.take() {
                     sink.stop();
                 }
                 
-                if let Ok(sink) = Self::create_sink_from_file_at_position(file_path, &stream_handle, position) {
-                    current_sink = Some(sink);
-                    track_info.lock().unwrap().current_time = position;
+                // Update time immediately for UI responsiveness
+                track_info.lock().unwrap().current_time = position;
+                
+                // Create new sink with optimizations
+                match Self::create_sink_from_file_at_position_optimized(&file_path, &stream_handle, position, current_volume) {
+                    Ok(sink) => {
+                        if was_playing {
+                            sink.play();
+                        } else {
+                            sink.pause();
+                        }
+                        current_sink = Some(sink);
+                    }
+                    Err(e) => {
+                        eprintln!("Optimized seek failed: {}", e);
+                        // Quick fallback - don't try multiple methods, just use one
+                        if let Ok(sink) = Self::create_sink_from_file_at_position_fast(&file_path, &stream_handle, position) {
+                            sink.set_volume(current_volume);
+                            if was_playing {
+                                sink.play();
+                            } else {
+                                sink.pause();
+                            }
+                            current_sink = Some(sink);
+                        }
+                    }
                 }
             }
 
@@ -261,30 +288,74 @@ impl AudioPlayer {
         Ok(sink)
     }
 
+    fn create_sink_from_file_at_position_optimized(
+        file_path: &str,
+        stream_handle: &OutputStreamHandle,
+        position: f64,
+        volume: f32,
+    ) -> Result<Sink, String> {
+        // Ultra-optimized: minimal overhead approach
+        let file = File::open(file_path).map_err(|e| format!("Failed to open file: {}", e))?;
+        
+        // Large buffer for maximum I/O performance
+        let buf_reader = std::io::BufReader::with_capacity(128 * 1024, file);
+        let source = rodio::Decoder::new(buf_reader)
+            .map_err(|e| format!("Failed to decode audio: {}", e))?;
+            
+        let sink = Sink::try_new(stream_handle).map_err(|e| format!("Failed to create sink: {}", e))?;
+        sink.set_volume(volume);
+        
+        // Skip efficiently - only if needed
+        if position > 0.1 { // Small threshold to avoid unnecessary work
+            let skipped_source = source.skip_duration(std::time::Duration::from_secs_f64(position));
+            sink.append(skipped_source);
+        } else {
+            sink.append(source);
+        }
+        
+        Ok(sink)
+    }
+
+    fn create_sink_from_file_at_position_fast(
+        file_path: &str,
+        stream_handle: &OutputStreamHandle,
+        position: f64,
+    ) -> Result<Sink, String> {
+        // Optimized approach: use larger buffer for faster I/O
+        let file = File::open(file_path).map_err(|e| format!("Failed to open file: {}", e))?;
+        
+        // Use a larger buffer for faster reading
+        let buf_reader = std::io::BufReader::with_capacity(64 * 1024, file);
+        let source = rodio::Decoder::new(buf_reader)
+            .map_err(|e| format!("Failed to decode audio: {}", e))?;
+            
+        let sink = Sink::try_new(stream_handle).map_err(|e| format!("Failed to create sink: {}", e))?;
+        
+        // Fast skip using duration
+        if position > 0.0 {
+            let skipped_source = source.skip_duration(std::time::Duration::from_secs_f64(position));
+            sink.append(skipped_source);
+        } else {
+            sink.append(source);
+        }
+        
+        Ok(sink)
+    }
+
     fn create_sink_from_file_at_position(
         file_path: &str,
         stream_handle: &OutputStreamHandle,
         position: f64,
     ) -> Result<Sink, String> {
-        // Create a new sink and source
+        // Fallback method - same as before but without auto-play
         let file = File::open(file_path).map_err(|e| format!("Failed to open file: {}", e))?;
         let source = rodio::Decoder::new(std::io::BufReader::new(file))
             .map_err(|e| format!("Failed to decode audio: {}", e))?;
 
         let sink = Sink::try_new(stream_handle).map_err(|e| format!("Failed to create sink: {}", e))?;
         
-        // Skip samples to approximate the seek position
-        let sample_rate = source.sample_rate() as f64;
-        let channels = source.channels() as f64;
-        let samples_to_skip = (position * sample_rate * channels) as usize;
-        
-        println!("Seeking to position: {:.2}s (skipping {} samples)", position, samples_to_skip);
-        
-        // Use rodio's skip functionality to skip samples
         let skipped_source = source.skip_duration(std::time::Duration::from_secs_f64(position));
-        
         sink.append(skipped_source);
-        sink.play();
 
         Ok(sink)
     }

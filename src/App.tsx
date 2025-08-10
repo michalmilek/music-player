@@ -362,8 +362,10 @@ function App() {
               <ProgressBar
                 currentTime={currentTime}
                 duration={duration}
-                onSeek={seek}
-                isPlaying={isPlaying}
+                onSeek={(time) => {
+                  // Immediately update UI for responsive feedback
+                  seek(time);
+                }}
               />
             </div>
 
