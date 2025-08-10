@@ -13,6 +13,7 @@ export function useAudioPlayer() {
   const [currentArtwork, setCurrentArtwork] = useState<string | null>(null);
   const [playbackMode, setPlaybackMode] = useState<PlaybackMode>(PlaybackMode.Linear);
   const [shuffleHistory, setShuffleHistory] = useState<number[]>([]);
+  const [songRatings, setSongRatings] = useState<{[path: string]: number}>({});
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -20,6 +21,7 @@ export function useAudioPlayer() {
     const savedHistory = localStorage.getItem('musicPlayerHistory');
     const savedVolume = localStorage.getItem('musicPlayerVolume');
     const savedMode = localStorage.getItem('musicPlayerMode');
+    const savedRatings = localStorage.getItem('musicPlayerRatings');
 
     if (savedPlaylist) {
       try {
@@ -44,6 +46,14 @@ export function useAudioPlayer() {
     if (savedMode && Object.values(PlaybackMode).includes(savedMode as PlaybackMode)) {
       setPlaybackMode(savedMode as PlaybackMode);
     }
+
+    if (savedRatings) {
+      try {
+        setSongRatings(JSON.parse(savedRatings));
+      } catch (error) {
+        console.error('Error loading ratings:', error);
+      }
+    }
   }, []);
 
   // Save data to localStorage
@@ -62,6 +72,10 @@ export function useAudioPlayer() {
   useEffect(() => {
     localStorage.setItem('musicPlayerMode', playbackMode);
   }, [playbackMode]);
+
+  useEffect(() => {
+    localStorage.setItem('musicPlayerRatings', JSON.stringify(songRatings));
+  }, [songRatings]);
 
   // Periodic timer to update current time from backend
   useEffect(() => {
@@ -496,9 +510,27 @@ export function useAudioPlayer() {
     }
   }, [playbackMode]);
 
+  const setSongRating = useCallback((songPath: string, rating: number) => {
+    setSongRatings(prev => ({
+      ...prev,
+      [songPath]: rating
+    }));
+  }, []);
+
+  const getSongRating = useCallback((songPath: string): number => {
+    return songRatings[songPath] || 0;
+  }, [songRatings]);
+
+  // Create playlist with ratings attached
+  const playlistWithRatings = playlist.map(song => ({
+    ...song,
+    rating: getSongRating(song.path)
+  }));
+
   return {
     // State
     playlist,
+    playlistWithRatings,
     currentSong,
     isPlaying,
     volume,
@@ -522,6 +554,8 @@ export function useAudioPlayer() {
     addSongsToPlaylist,
     reorderPlaylist,
     togglePlaybackMode,
+    setSongRating,
+    getSongRating,
     setCurrentTime,
   };
 }

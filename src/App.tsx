@@ -18,6 +18,7 @@ import { PlaylistExport } from "./components/PlaylistExport";
 function App() {
   const {
     playlist,
+    playlistWithRatings,
     currentSong,
     isPlaying,
     volume,
@@ -39,6 +40,8 @@ function App() {
     addSongsToPlaylist,
     reorderPlaylist,
     togglePlaybackMode,
+    setSongRating,
+    getSongRating,
   } = useAudioPlayer();
 
   const [showHelp, setShowHelp] = useState(false);
@@ -327,7 +330,7 @@ function App() {
       {/* Main content */}
       <div className="flex-1 flex">
         <Playlist
-          playlist={playlist}
+          playlist={playlistWithRatings}
           currentSong={currentSong}
           onSongSelect={playSong}
           onClearPlaylist={clearPlaylist}
@@ -335,6 +338,7 @@ function App() {
           onImportLibrary={() => setShowLibraryImport(true)}
           onExportPlaylist={() => setShowPlaylistExport(true)}
           onReorderPlaylist={reorderPlaylist}
+          onSetRating={setSongRating}
         />
 
         {/* Now Playing */}
@@ -342,8 +346,9 @@ function App() {
           <div className="flex-1 p-8">
             <div className="max-w-4xl mx-auto">
               <NowPlaying 
-                currentSong={currentSong}
+                currentSong={currentSong ? {...currentSong, rating: getSongRating(currentSong.path)} : null}
                 currentArtwork={currentArtwork}
+                onSetRating={setSongRating}
               />
 
               <PlaybackInfo

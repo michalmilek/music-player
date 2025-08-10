@@ -1,6 +1,7 @@
 import { Song } from "../types/music";
 import { Trash2, FolderSearch, FolderOpen, Download, GripVertical } from "lucide-react";
 import { useState } from "react";
+import { StarRating } from "./StarRating";
 
 interface PlaylistProps {
   playlist: Song[];
@@ -11,6 +12,7 @@ interface PlaylistProps {
   onImportLibrary: () => void;
   onExportPlaylist: () => void;
   onReorderPlaylist: (fromIndex: number, toIndex: number) => void;
+  onSetRating: (songPath: string, rating: number) => void;
 }
 
 export function Playlist({
@@ -22,6 +24,7 @@ export function Playlist({
   onImportLibrary,
   onExportPlaylist,
   onReorderPlaylist,
+  onSetRating,
 }: PlaylistProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -142,6 +145,13 @@ export function Playlist({
                     {song.metadata.album && ` • ${song.metadata.album}`}
                   </div>
                 )}
+                <div className="mt-1">
+                  <StarRating
+                    rating={song.rating || 0}
+                    onRatingChange={(rating) => onSetRating(song.path, rating)}
+                    size="sm"
+                  />
+                </div>
               </div>
               {song.metadata?.duration && (
                 <span 
