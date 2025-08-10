@@ -25,6 +25,7 @@ function App() {
     duration,
     playHistory,
     currentArtwork,
+    playbackMode,
     playSong,
     togglePlay,
     nextSong,
@@ -36,6 +37,7 @@ function App() {
     clearPlaylist,
     clearHistory,
     addSongsToPlaylist,
+    togglePlaybackMode,
   } = useAudioPlayer();
 
   const [showHelp, setShowHelp] = useState(false);
@@ -373,11 +375,13 @@ function App() {
               <PlayerControls
                 isPlaying={isPlaying}
                 currentSong={currentSong}
+                playbackMode={playbackMode}
                 onTogglePlay={togglePlay}
                 onPrevious={previousSong}
                 onNext={nextSong}
                 onSkipBackward={skipBackward}
                 onSkipForward={skipForward}
+                onTogglePlaybackMode={togglePlaybackMode}
               />
             </div>
 

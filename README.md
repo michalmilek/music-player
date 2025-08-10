@@ -32,6 +32,7 @@ Odtwarzacz muzyczny zbudowany w Tauri z React, TypeScript, Tailwind CSS i shadcn
 - 🎨 **Nowoczesny UI z tabs**: Elegancki interfejs z shadcn/ui i organizacją w zakładki
 - 💾 **Automatyczne zapisywanie**: Wszystkie ustawienia, playlist i historia w localStorage
 - 🌙 **Dark mode ready**: Wsparcie dla ciemnego motywu
+- 🔄 **Tryby odtwarzania**: Linear, Repeat All, Repeat One, Shuffle z automatycznym przełączaniem
 
 ## 📱 Interfejs użytkownika
 
@@ -162,6 +163,7 @@ npm run tauri build
 - [x] **Obsługa okładek albumów**: Automatyczne wyodrębnianie i wyświetlanie artwork z plików
 - [x] **Import biblioteki muzycznej**: Skanowanie folderów z progress tracking
 - [x] **Eksport playlist**: Zapisywanie do plików M3U, PLS, JSON
+- [x] **Tryby odtwarzania**: Repeat One, Repeat All, Shuffle, Linear z automatycznym przełączaniem utworów
 
 ### ⌨️ Skróty klawiszowe
 - **Spacja** - Play/Pause
@@ -177,7 +179,7 @@ npm run tauri build
 ## 🗺️ Roadmap - Plan rozwoju
 
 ### 🚧 Następne funkcje (Faza 1)
-- [ ] **Tryby odtwarzania**: Repeat (single/all), Shuffle, Linear
+- [x] **Tryby odtwarzania**: Repeat (single/all), Shuffle, Linear
 - [ ] **System oceniania**: 5-gwiazdkowy rating system dla utworów
 - [ ] **Ulubione utwory**: Favoriting z szybkim dostępem
 - [ ] **Filtrowanie biblioteki**: Wyszukiwanie i filtrowanie według artysty, gatunku, roku

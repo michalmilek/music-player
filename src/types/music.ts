@@ -29,3 +29,10 @@ export interface PlayHistoryEntry {
   playedAt: string;
   playCount: number;
 }
+
+export enum PlaybackMode {
+  Linear = "linear",
+  RepeatAll = "repeat-all", 
+  RepeatOne = "repeat-one",
+  Shuffle = "shuffle"
+}

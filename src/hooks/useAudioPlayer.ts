@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Song, AlbumArtwork, PlayHistoryEntry } from "../types/music";
+import { Song, AlbumArtwork, PlayHistoryEntry, PlaybackMode } from "../types/music";
 
 export function useAudioPlayer() {
   const [playlist, setPlaylist] = useState<Song[]>([]);
@@ -11,12 +11,15 @@ export function useAudioPlayer() {
   const [duration, setDuration] = useState(0);
   const [playHistory, setPlayHistory] = useState<PlayHistoryEntry[]>([]);
   const [currentArtwork, setCurrentArtwork] = useState<string | null>(null);
+  const [playbackMode, setPlaybackMode] = useState<PlaybackMode>(PlaybackMode.Linear);
+  const [shuffleHistory, setShuffleHistory] = useState<number[]>([]);
 
   // Load data from localStorage on mount
   useEffect(() => {
     const savedPlaylist = localStorage.getItem('musicPlayerPlaylist');
     const savedHistory = localStorage.getItem('musicPlayerHistory');
     const savedVolume = localStorage.getItem('musicPlayerVolume');
+    const savedMode = localStorage.getItem('musicPlayerMode');
 
     if (savedPlaylist) {
       try {
@@ -37,6 +40,10 @@ export function useAudioPlayer() {
     if (savedVolume) {
       setVolume(parseInt(savedVolume));
     }
+
+    if (savedMode && Object.values(PlaybackMode).includes(savedMode as PlaybackMode)) {
+      setPlaybackMode(savedMode as PlaybackMode);
+    }
   }, []);
 
   // Save data to localStorage
@@ -52,6 +59,10 @@ export function useAudioPlayer() {
     localStorage.setItem('musicPlayerVolume', volume.toString());
   }, [volume]);
 
+  useEffect(() => {
+    localStorage.setItem('musicPlayerMode', playbackMode);
+  }, [playbackMode]);
+
   // Periodic timer to update current time from backend
   useEffect(() => {
     let interval: number | null = null;
@@ -61,6 +72,160 @@ export function useAudioPlayer() {
         try {
           const backendTime = await invoke<number>("get_current_time");
           setCurrentTime(backendTime);
+          
+          // Check if song has ended (with small tolerance for timing issues)
+          if (duration > 0 && backendTime >= duration - 0.1) {
+            console.log("Song ended, handling next song with mode:", playbackMode);
+            
+            switch (playbackMode) {
+              case PlaybackMode.RepeatOne:
+                // Restart current song
+                try {
+                  const songDuration = await invoke<number>("play_song", { path: currentSong.path });
+                  setDuration(currentSong.metadata?.duration || songDuration);
+                  setCurrentTime(0);
+                  setIsPlaying(true);
+                } catch (error) {
+                  console.error("Failed to repeat song:", error);
+                  setIsPlaying(false);
+                }
+                break;
+                
+              case PlaybackMode.RepeatAll:
+              case PlaybackMode.Shuffle: {
+                // Use existing nextSong logic
+                const currentIndex = playlist.findIndex(s => s.path === currentSong.path);
+                
+                let nextIndex: number;
+                if (playbackMode === PlaybackMode.Shuffle) {
+                  if (playlist.length === 1) {
+                    nextIndex = currentIndex;
+                  } else if (shuffleHistory.length >= playlist.length - 1) {
+                    setShuffleHistory([currentIndex]);
+                    const availableIndices = playlist
+                      .map((_, index) => index)
+                      .filter(index => index !== currentIndex);
+                    nextIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+                  } else {
+                    const availableIndices = playlist
+                      .map((_, index) => index)
+                      .filter(index => !shuffleHistory.includes(index) && index !== currentIndex);
+                    nextIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+                    setShuffleHistory(prev => [...prev, currentIndex]);
+                  }
+                } else {
+                  nextIndex = (currentIndex + 1) % playlist.length;
+                }
+                
+                try {
+                  const nextSong = playlist[nextIndex];
+                  setCurrentSong(nextSong);
+                  const songDuration = await invoke<number>("play_song", { path: nextSong.path });
+                  setDuration(nextSong.metadata?.duration || songDuration);
+                  setCurrentTime(0);
+                  setIsPlaying(true);
+                  
+                  if (nextSong.metadata?.has_artwork) {
+                    try {
+                      const artwork = await invoke<AlbumArtwork | null>("get_album_artwork", { path: nextSong.path });
+                      if (artwork) {
+                        setCurrentArtwork(`data:${artwork.mime_type};base64,${artwork.data}`);
+                      } else {
+                        setCurrentArtwork(null);
+                      }
+                    } catch (error) {
+                      console.error("Failed to load artwork:", error);
+                      setCurrentArtwork(null);
+                    }
+                  } else {
+                    setCurrentArtwork(null);
+                  }
+                  
+                  // Add to history
+                  setPlayHistory(prev => {
+                    const existingEntry = prev.find(entry => entry.song.path === nextSong.path);
+                    if (existingEntry) {
+                      return prev.map(entry =>
+                        entry.song.path === nextSong.path
+                          ? { ...entry, playCount: entry.playCount + 1, playedAt: new Date().toISOString() }
+                          : entry
+                      );
+                    } else {
+                      const newEntry: PlayHistoryEntry = {
+                        song: nextSong,
+                        playedAt: new Date().toISOString(),
+                        playCount: 1
+                      };
+                      return [newEntry, ...prev].slice(0, 100);
+                    }
+                  });
+                } catch (error) {
+                  console.error("Failed to play next song:", error);
+                  setIsPlaying(false);
+                }
+                break;
+              }
+              
+              case PlaybackMode.Linear:
+              default: {
+                const currentIndex = playlist.findIndex(s => s.path === currentSong.path);
+                if (currentIndex < playlist.length - 1) {
+                  // Play next song
+                  const nextIndex = currentIndex + 1;
+                  try {
+                    const nextSong = playlist[nextIndex];
+                    setCurrentSong(nextSong);
+                    const songDuration = await invoke<number>("play_song", { path: nextSong.path });
+                    setDuration(nextSong.metadata?.duration || songDuration);
+                    setCurrentTime(0);
+                    setIsPlaying(true);
+                    
+                    if (nextSong.metadata?.has_artwork) {
+                      try {
+                        const artwork = await invoke<AlbumArtwork | null>("get_album_artwork", { path: nextSong.path });
+                        if (artwork) {
+                          setCurrentArtwork(`data:${artwork.mime_type};base64,${artwork.data}`);
+                        } else {
+                          setCurrentArtwork(null);
+                        }
+                      } catch (error) {
+                        console.error("Failed to load artwork:", error);
+                        setCurrentArtwork(null);
+                      }
+                    } else {
+                      setCurrentArtwork(null);
+                    }
+                    
+                    // Add to history
+                    setPlayHistory(prev => {
+                      const existingEntry = prev.find(entry => entry.song.path === nextSong.path);
+                      if (existingEntry) {
+                        return prev.map(entry =>
+                          entry.song.path === nextSong.path
+                            ? { ...entry, playCount: entry.playCount + 1, playedAt: new Date().toISOString() }
+                            : entry
+                        );
+                      } else {
+                        const newEntry: PlayHistoryEntry = {
+                          song: nextSong,
+                          playedAt: new Date().toISOString(),
+                          playCount: 1
+                        };
+                        return [newEntry, ...prev].slice(0, 100);
+                      }
+                    });
+                  } catch (error) {
+                    console.error("Failed to play next song:", error);
+                    setIsPlaying(false);
+                  }
+                } else {
+                  // End of playlist in linear mode
+                  setIsPlaying(false);
+                }
+                break;
+              }
+            }
+          }
         } catch (error) {
           console.warn("Failed to get current time:", error);
         }
@@ -72,7 +237,7 @@ export function useAudioPlayer() {
         clearInterval(interval);
       }
     };
-  }, [isPlaying, currentSong]);
+  }, [isPlaying, currentSong, duration, playbackMode, playlist, shuffleHistory]);
 
   const addToHistory = useCallback((song: Song) => {
     setPlayHistory(prev => {
@@ -146,19 +311,104 @@ export function useAudioPlayer() {
     }
   }, [currentSong, isPlaying]);
 
+  const getRandomIndex = useCallback((exclude: number[] = []): number => {
+    const availableIndices = playlist
+      .map((_, index) => index)
+      .filter(index => !exclude.includes(index));
+    
+    if (availableIndices.length === 0) return 0;
+    
+    return availableIndices[Math.floor(Math.random() * availableIndices.length)];
+  }, [playlist]);
+
   const nextSong = useCallback(() => {
     if (!currentSong || playlist.length === 0) return;
+    
     const currentIndex = playlist.findIndex(s => s.path === currentSong.path);
-    const nextIndex = (currentIndex + 1) % playlist.length;
-    playSong(playlist[nextIndex]);
-  }, [currentSong, playlist, playSong]);
+    
+    switch (playbackMode) {
+      case PlaybackMode.RepeatOne:
+        playSong(currentSong);
+        break;
+        
+      case PlaybackMode.Shuffle: {
+        if (playlist.length === 1) {
+          playSong(currentSong);
+          break;
+        }
+        
+        let nextIndex: number;
+        if (shuffleHistory.length >= playlist.length - 1) {
+          setShuffleHistory([currentIndex]);
+          nextIndex = getRandomIndex([currentIndex]);
+        } else {
+          nextIndex = getRandomIndex([...shuffleHistory, currentIndex]);
+          setShuffleHistory(prev => [...prev, currentIndex]);
+        }
+        playSong(playlist[nextIndex]);
+        break;
+      }
+      
+      case PlaybackMode.RepeatAll: {
+        const nextIndex = (currentIndex + 1) % playlist.length;
+        playSong(playlist[nextIndex]);
+        break;
+      }
+      
+      case PlaybackMode.Linear:
+      default: {
+        if (currentIndex < playlist.length - 1) {
+          const nextIndex = currentIndex + 1;
+          playSong(playlist[nextIndex]);
+        }
+        break;
+      }
+    }
+  }, [currentSong, playlist, playbackMode, shuffleHistory, playSong, getRandomIndex]);
 
   const previousSong = useCallback(() => {
     if (!currentSong || playlist.length === 0) return;
+    
     const currentIndex = playlist.findIndex(s => s.path === currentSong.path);
-    const previousIndex = currentIndex === 0 ? playlist.length - 1 : currentIndex - 1;
-    playSong(playlist[previousIndex]);
-  }, [currentSong, playlist, playSong]);
+    
+    switch (playbackMode) {
+      case PlaybackMode.RepeatOne:
+        playSong(currentSong);
+        break;
+        
+      case PlaybackMode.Shuffle: {
+        if (playlist.length === 1) {
+          playSong(currentSong);
+          break;
+        }
+        
+        if (shuffleHistory.length > 0) {
+          const lastIndex = shuffleHistory[shuffleHistory.length - 1];
+          setShuffleHistory(prev => prev.slice(0, -1));
+          playSong(playlist[lastIndex]);
+        } else {
+          const randomIndex = getRandomIndex([currentIndex]);
+          playSong(playlist[randomIndex]);
+        }
+        break;
+      }
+      
+      case PlaybackMode.RepeatAll: {
+        const previousIndex = currentIndex === 0 ? playlist.length - 1 : currentIndex - 1;
+        playSong(playlist[previousIndex]);
+        break;
+      }
+      
+      case PlaybackMode.Linear:
+      default: {
+        if (currentIndex > 0) {
+          const previousIndex = currentIndex - 1;
+          playSong(playlist[previousIndex]);
+        }
+        break;
+      }
+    }
+  }, [currentSong, playlist, playbackMode, shuffleHistory, playSong, getRandomIndex]);
 
   const handleVolumeChange = useCallback(async (newVolume: number) => {
     setVolume(newVolume);
@@ -226,6 +476,17 @@ export function useAudioPlayer() {
     setPlaylist(prev => [...prev, ...songs]);
   }, []);
 
+  const togglePlaybackMode = useCallback(() => {
+    const modes = [PlaybackMode.Linear, PlaybackMode.RepeatAll, PlaybackMode.RepeatOne, PlaybackMode.Shuffle];
+    const currentIndex = modes.indexOf(playbackMode);
+    const nextIndex = (currentIndex + 1) % modes.length;
+    setPlaybackMode(modes[nextIndex]);
+    
+    if (modes[nextIndex] !== PlaybackMode.Shuffle) {
+      setShuffleHistory([]);
+    }
+  }, [playbackMode]);
+
   return {
     // State
     playlist,
@@ -236,6 +497,7 @@ export function useAudioPlayer() {
     duration,
     playHistory,
     currentArtwork,
+    playbackMode,
     
     // Actions
     playSong,
@@ -249,6 +511,7 @@ export function useAudioPlayer() {
     clearPlaylist,
     clearHistory,
     addSongsToPlaylist,
+    togglePlaybackMode,
     setCurrentTime,
   };
 }
