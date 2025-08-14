@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { Music, HelpCircle, X, Minimize2, FolderOpen, FolderSearch, Download } from "lucide-react";
+import { Music, HelpCircle, X, Minimize2, FolderOpen, FolderSearch, Download, Wand2 } from "lucide-react";
 import { Song, TrackMetadata } from "./types/music";
 import { useAudioPlayer } from "./hooks/useAudioPlayer";
 import { Playlist } from "./components/Playlist";
@@ -14,6 +14,7 @@ import { PlaybackInfo } from "./components/PlaybackInfo";
 import { MiniPlayer } from "./components/MiniPlayer";
 import { MusicLibraryImport } from "./components/MusicLibraryImport";
 import { PlaylistExport } from "./components/PlaylistExport";
+import { SmartPlaylistManager } from "./components/SmartPlaylistManager";
 
 function App() {
   const {
@@ -44,6 +45,11 @@ function App() {
     getSongRating,
     toggleSongFavorite,
     getSongFavorite,
+    smartPlaylists,
+    saveSmartPlaylist,
+    deleteSmartPlaylist,
+    toggleSmartPlaylist,
+    playSmartPlaylist,
   } = useAudioPlayer();
 
   const [showHelp, setShowHelp] = useState(false);
@@ -51,6 +57,7 @@ function App() {
   const [isMiniPlayer, setIsMiniPlayer] = useState(false);
   const [showLibraryImport, setShowLibraryImport] = useState(false);
   const [showPlaylistExport, setShowPlaylistExport] = useState(false);
+  const [showSmartPlaylistManager, setShowSmartPlaylistManager] = useState(false);
   const [skipAmount, setSkipAmount] = useState(10);
 
   // Load skip amount from localStorage
@@ -312,6 +319,13 @@ function App() {
           </h1>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setShowSmartPlaylistManager(true)}
+              className="p-2 rounded-md hover:bg-muted transition-colors"
+              title="Smart Playlists"
+            >
+              <Wand2 className="w-5 h-5" />
+            </button>
+            <button
               onClick={() => setIsMiniPlayer(true)}
               className="p-2 rounded-md hover:bg-muted transition-colors"
               title="Mini player mode"
@@ -498,6 +512,22 @@ function App() {
         <PlaylistExport
           playlist={playlist}
           onClose={() => setShowPlaylistExport(false)}
+        />
+      )}
+
+      {/* Smart Playlist Manager */}
+      {showSmartPlaylistManager && (
+        <SmartPlaylistManager
+          smartPlaylists={smartPlaylists}
+          allSongs={playlist}
+          playHistory={playHistory}
+          getSongRating={getSongRating}
+          getSongFavorite={getSongFavorite}
+          onSaveSmartPlaylist={saveSmartPlaylist}
+          onDeleteSmartPlaylist={deleteSmartPlaylist}
+          onToggleSmartPlaylist={toggleSmartPlaylist}
+          onPlaySmartPlaylist={playSmartPlaylist}
+          onClose={() => setShowSmartPlaylistManager(false)}
         />
       )}
     </div>

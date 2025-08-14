@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Song, AlbumArtwork, PlayHistoryEntry, PlaybackMode } from "../types/music";
+import { Song, AlbumArtwork, PlayHistoryEntry, PlaybackMode, SmartPlaylist } from "../types/music";
+import { SmartPlaylistEngine } from "../utils/smartPlaylistEngine";
 
 export function useAudioPlayer() {
   const [playlist, setPlaylist] = useState<Song[]>([]);
@@ -15,6 +16,7 @@ export function useAudioPlayer() {
   const [shuffleHistory, setShuffleHistory] = useState<number[]>([]);
   const [songRatings, setSongRatings] = useState<{[path: string]: number}>({});
   const [songFavorites, setSongFavorites] = useState<{[path: string]: boolean}>({});
+  const [smartPlaylists, setSmartPlaylists] = useState<SmartPlaylist[]>([]);
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -24,6 +26,7 @@ export function useAudioPlayer() {
     const savedMode = localStorage.getItem('musicPlayerMode');
     const savedRatings = localStorage.getItem('musicPlayerRatings');
     const savedFavorites = localStorage.getItem('musicPlayerFavorites');
+    const savedSmartPlaylists = localStorage.getItem('musicPlayerSmartPlaylists');
 
     if (savedPlaylist) {
       try {
@@ -64,6 +67,14 @@ export function useAudioPlayer() {
         console.error('Error loading favorites:', error);
       }
     }
+
+    if (savedSmartPlaylists) {
+      try {
+        setSmartPlaylists(JSON.parse(savedSmartPlaylists));
+      } catch (error) {
+        console.error('Error loading smart playlists:', error);
+      }
+    }
   }, []);
 
   // Save data to localStorage
@@ -90,6 +101,10 @@ export function useAudioPlayer() {
   useEffect(() => {
     localStorage.setItem('musicPlayerFavorites', JSON.stringify(songFavorites));
   }, [songFavorites]);
+
+  useEffect(() => {
+    localStorage.setItem('musicPlayerSmartPlaylists', JSON.stringify(smartPlaylists));
+  }, [smartPlaylists]);
 
   // Periodic timer to update current time from backend
   useEffect(() => {
@@ -585,5 +600,35 @@ export function useAudioPlayer() {
     toggleSongFavorite,
     getSongFavorite,
     setCurrentTime,
+    
+    // Smart Playlists
+    smartPlaylists,
+    saveSmartPlaylist: (smartPlaylist: SmartPlaylist) => {
+      const updatedPlaylists = smartPlaylists.filter(p => p.id !== smartPlaylist.id);
+      setSmartPlaylists([...updatedPlaylists, smartPlaylist]);
+    },
+    deleteSmartPlaylist: (playlistId: string) => {
+      setSmartPlaylists(smartPlaylists.filter(p => p.id !== playlistId));
+    },
+    toggleSmartPlaylist: (playlistId: string) => {
+      setSmartPlaylists(smartPlaylists.map(p => 
+        p.id === playlistId ? { ...p, isActive: !p.isActive } : p
+      ));
+    },
+    getSmartPlaylistSongs: (smartPlaylist: SmartPlaylist) => {
+      return SmartPlaylistEngine.evaluateSmartPlaylist(
+        smartPlaylist,
+        playlist,
+        playHistory,
+        getSongRating,
+        getSongFavorite
+      );
+    },
+    playSmartPlaylist: (songs: Song[]) => {
+      setPlaylist(songs);
+      if (songs.length > 0) {
+        playSong(songs[0]);
+      }
+    },
   };
 }

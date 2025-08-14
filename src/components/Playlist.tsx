@@ -3,6 +3,7 @@ import { Trash2, FolderSearch, FolderOpen, Download, GripVertical, Heart } from 
 import { useState } from "react";
 import { StarRating } from "./StarRating";
 import { FavoriteButton } from "./FavoriteButton";
+import { LibraryFilter } from "./LibraryFilter";
 
 interface PlaylistProps {
   playlist: Song[];
@@ -32,6 +33,7 @@ export function Playlist({
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+  const [filteredPlaylist, setFilteredPlaylist] = useState<Song[]>(playlist);
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -69,18 +71,28 @@ export function Playlist({
     setDragOverIndex(null);
   };
 
-  const filteredPlaylist = showOnlyFavorites 
-    ? playlist.filter(song => song.isFavorite) 
-    : playlist;
+  // Apply favorite filter on top of the library filter
+  const displayedPlaylist = showOnlyFavorites 
+    ? filteredPlaylist.filter(song => song.isFavorite) 
+    : filteredPlaylist;
 
   const favoriteCount = playlist.filter(song => song.isFavorite).length;
 
   return (
-    <aside className="w-80 border-r p-4 overflow-y-auto">
+    <aside className="w-80 border-r overflow-y-auto">
+      {/* Library Filter */}
+      <LibraryFilter 
+        playlist={playlist}
+        onFilteredPlaylistChange={setFilteredPlaylist}
+      />
+      
+      <div className="p-4">
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-semibold">
-            Playlist {showOnlyFavorites ? `(${favoriteCount} favorites)` : `(${playlist.length} songs)`}
+            Playlist {showOnlyFavorites 
+              ? `(${displayedPlaylist.length} favorites)` 
+              : `(${displayedPlaylist.length}/${playlist.length} songs)`}
           </h2>
           <button
             onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
@@ -131,7 +143,7 @@ export function Playlist({
         </div>
       </div>
       <div className="space-y-1">
-        {filteredPlaylist.map((song, filteredIndex) => {
+        {displayedPlaylist.map((song, filteredIndex) => {
           const originalIndex = playlist.findIndex(s => s.path === song.path);
           return (
           <div
@@ -200,6 +212,7 @@ export function Playlist({
           </div>
           );
         })}
+      </div>
       </div>
     </aside>
   );
