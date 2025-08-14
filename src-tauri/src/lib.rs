@@ -1,8 +1,10 @@
 mod audio;
 mod symphonia_player;
 mod audio_new;
+mod crossfade_engine;
 
 use audio::{AudioPlayer, TrackMetadata, AlbumArtwork};
+use crossfade_engine::{CrossfadeAudioPlayer, CrossfadeConfig, CrossfadeTrackInfo, CrossfadeCurve};
 use std::sync::{Arc, Mutex};
 use std::path::Path;
 use std::fs;
@@ -11,6 +13,7 @@ use walkdir::WalkDir;
 
 struct AppState {
     player: Arc<Mutex<AudioPlayer>>,
+    crossfade_player: Arc<Mutex<Option<CrossfadeAudioPlayer>>>,
 }
 
 #[tauri::command]
@@ -197,11 +200,82 @@ fn save_playlist_file(path: String, content: String) -> Result<(), String> {
         .map_err(|e| format!("Failed to save playlist: {}", e))
 }
 
+// Crossfade commands
+#[tauri::command]
+fn enable_crossfade(enabled: bool, state: State<AppState>) -> Result<(), String> {
+    let mut crossfade_player = state.crossfade_player.lock().unwrap();
+    
+    if enabled && crossfade_player.is_none() {
+        match CrossfadeAudioPlayer::new() {
+            Ok(player) => {
+                *crossfade_player = Some(player);
+                Ok(())
+            },
+            Err(e) => Err(format!("Failed to initialize crossfade player: {}", e))
+        }
+    } else if let Some(ref player) = *crossfade_player {
+        player.enable_crossfade(enabled);
+        Ok(())
+    } else {
+        Ok(())
+    }
+}
+
+#[tauri::command]
+fn set_crossfade_duration(duration: f32, state: State<AppState>) -> Result<(), String> {
+    let crossfade_player = state.crossfade_player.lock().unwrap();
+    if let Some(ref player) = *crossfade_player {
+        player.set_crossfade_duration(duration);
+        Ok(())
+    } else {
+        Err("Crossfade player not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+fn get_crossfade_config(state: State<AppState>) -> Result<CrossfadeConfig, String> {
+    let crossfade_player = state.crossfade_player.lock().unwrap();
+    if let Some(ref player) = *crossfade_player {
+        Ok(player.get_crossfade_config())
+    } else {
+        Ok(CrossfadeConfig::default())
+    }
+}
+
+#[tauri::command]
+fn get_crossfade_track_info(state: State<AppState>) -> Result<CrossfadeTrackInfo, String> {
+    let crossfade_player = state.crossfade_player.lock().unwrap();
+    if let Some(ref player) = *crossfade_player {
+        Ok(player.get_track_info())
+    } else {
+        Ok(CrossfadeTrackInfo {
+            duration: 0.0,
+            current_time: 0.0,
+            is_playing: false,
+            crossfade_active: false,
+            crossfade_progress: 0.0,
+            current_track: None,
+            next_track: None,
+        })
+    }
+}
+
+#[tauri::command]
+fn play_song_with_crossfade(path: String, crossfade_duration: Option<f32>, state: State<AppState>) -> Result<(), String> {
+    let crossfade_player = state.crossfade_player.lock().unwrap();
+    if let Some(ref player) = *crossfade_player {
+        player.play_with_crossfade(&path, crossfade_duration)
+    } else {
+        Err("Crossfade player not initialized".to_string())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let player = AudioPlayer::new().expect("Failed to initialize audio player");
     let app_state = AppState {
         player: Arc::new(Mutex::new(player)),
+        crossfade_player: Arc::new(Mutex::new(None)),
     };
 
     tauri::Builder::default()
@@ -225,7 +299,12 @@ pub fn run() {
             get_album_artwork,
             scan_music_folder,
             get_music_files_metadata,
-            save_playlist_file
+            save_playlist_file,
+            enable_crossfade,
+            set_crossfade_duration,
+            get_crossfade_config,
+            get_crossfade_track_info,
+            play_song_with_crossfade
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

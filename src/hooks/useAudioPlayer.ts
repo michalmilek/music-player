@@ -17,6 +17,17 @@ export function useAudioPlayer() {
   const [songRatings, setSongRatings] = useState<{[path: string]: number}>({});
   const [songFavorites, setSongFavorites] = useState<{[path: string]: boolean}>({});
   const [smartPlaylists, setSmartPlaylists] = useState<SmartPlaylist[]>([]);
+  const [crossfadeEnabled, setCrossfadeEnabled] = useState(false);
+
+  // Check crossfade status
+  const checkCrossfadeStatus = useCallback(async () => {
+    try {
+      const config = await invoke<{enabled: boolean} | null>("get_crossfade_config");
+      setCrossfadeEnabled(config?.enabled || false);
+    } catch (error) {
+      console.error("Failed to check crossfade status:", error);
+    }
+  }, []);
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -75,7 +86,9 @@ export function useAudioPlayer() {
         console.error('Error loading smart playlists:', error);
       }
     }
-  }, []);
+
+    checkCrossfadeStatus();
+  }, [checkCrossfadeStatus]);
 
   // Save data to localStorage
   useEffect(() => {
@@ -316,10 +329,24 @@ export function useAudioPlayer() {
     }
   }, []);
 
-  const playSong = useCallback(async (song: Song) => {
+  const playSong = useCallback(async (song: Song, useCrossfade: boolean = false) => {
     try {
       setCurrentSong(song);
-      const songDuration = await invoke<number>("play_song", { path: song.path });
+      
+      let songDuration: number;
+      if (useCrossfade) {
+        // Try to use crossfade, fall back to regular play if it fails
+        try {
+          await invoke("play_song_with_crossfade", { path: song.path, crossfadeDuration: null });
+          songDuration = song.metadata?.duration || 0;
+        } catch (crossfadeError) {
+          console.warn("Crossfade failed, falling back to regular play:", crossfadeError);
+          songDuration = await invoke<number>("play_song", { path: song.path });
+        }
+      } else {
+        songDuration = await invoke<number>("play_song", { path: song.path });
+      }
+      
       setDuration(song.metadata?.duration || songDuration);
       setCurrentTime(0);
       setIsPlaying(true);
@@ -388,13 +415,13 @@ export function useAudioPlayer() {
           nextIndex = getRandomIndex([...shuffleHistory, currentIndex]);
           setShuffleHistory(prev => [...prev, currentIndex]);
         }
-        playSong(playlist[nextIndex]);
+        playSong(playlist[nextIndex], crossfadeEnabled);
         break;
       }
       
       case PlaybackMode.RepeatAll: {
         const nextIndex = (currentIndex + 1) % playlist.length;
-        playSong(playlist[nextIndex]);
+        playSong(playlist[nextIndex], crossfadeEnabled);
         break;
       }
       
@@ -402,12 +429,12 @@ export function useAudioPlayer() {
       default: {
         if (currentIndex < playlist.length - 1) {
           const nextIndex = currentIndex + 1;
-          playSong(playlist[nextIndex]);
+          playSong(playlist[nextIndex], crossfadeEnabled);
         }
         break;
       }
     }
-  }, [currentSong, playlist, playbackMode, shuffleHistory, playSong, getRandomIndex]);
+  }, [currentSong, playlist, playbackMode, shuffleHistory, playSong, getRandomIndex, crossfadeEnabled]);
 
   const previousSong = useCallback(() => {
     if (!currentSong || playlist.length === 0) return;
@@ -438,7 +465,7 @@ export function useAudioPlayer() {
       
       case PlaybackMode.RepeatAll: {
         const previousIndex = currentIndex === 0 ? playlist.length - 1 : currentIndex - 1;
-        playSong(playlist[previousIndex]);
+        playSong(playlist[previousIndex], crossfadeEnabled);
         break;
       }
       
@@ -446,12 +473,12 @@ export function useAudioPlayer() {
       default: {
         if (currentIndex > 0) {
           const previousIndex = currentIndex - 1;
-          playSong(playlist[previousIndex]);
+          playSong(playlist[previousIndex], crossfadeEnabled);
         }
         break;
       }
     }
-  }, [currentSong, playlist, playbackMode, shuffleHistory, playSong, getRandomIndex]);
+  }, [currentSong, playlist, playbackMode, shuffleHistory, playSong, getRandomIndex, crossfadeEnabled]);
 
   const handleVolumeChange = useCallback(async (newVolume: number) => {
     setVolume(newVolume);
@@ -630,5 +657,6 @@ export function useAudioPlayer() {
         playSong(songs[0]);
       }
     },
+    checkCrossfadeStatus,
   };
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { Music, HelpCircle, X, Minimize2, FolderOpen, FolderSearch, Download, Wand2, Keyboard } from "lucide-react";
+import { Music, HelpCircle, X, Minimize2, FolderOpen, FolderSearch, Download, Wand2, Keyboard, Settings } from "lucide-react";
 import { Song, TrackMetadata } from "./types/music";
 import { useAudioPlayer } from "./hooks/useAudioPlayer";
 import { Playlist } from "./components/Playlist";
@@ -16,6 +16,7 @@ import { MusicLibraryImport } from "./components/MusicLibraryImport";
 import { PlaylistExport } from "./components/PlaylistExport";
 import { SmartPlaylistManager } from "./components/SmartPlaylistManager";
 import { GlobalHotkeysSettings } from "./components/GlobalHotkeysSettings";
+import { CrossfadeSettings } from "./components/CrossfadeSettings";
 
 function App() {
   const {
@@ -51,6 +52,7 @@ function App() {
     deleteSmartPlaylist,
     toggleSmartPlaylist,
     playSmartPlaylist,
+    checkCrossfadeStatus,
   } = useAudioPlayer();
 
   const [showHelp, setShowHelp] = useState(false);
@@ -60,6 +62,7 @@ function App() {
   const [showPlaylistExport, setShowPlaylistExport] = useState(false);
   const [showSmartPlaylistManager, setShowSmartPlaylistManager] = useState(false);
   const [showGlobalHotkeysSettings, setShowGlobalHotkeysSettings] = useState(false);
+  const [showCrossfadeSettings, setShowCrossfadeSettings] = useState(false);
   const [skipAmount, setSkipAmount] = useState(10);
 
   // Load skip amount from localStorage
@@ -203,6 +206,7 @@ function App() {
           e.preventDefault();
           setShowHelp(false);
           setShowGlobalHotkeysSettings(false);
+          setShowCrossfadeSettings(false);
           break;
         case 'KeyG':
           if (e.ctrlKey || e.metaKey) {
@@ -333,6 +337,13 @@ function App() {
               title="Global Hotkeys"
             >
               <Keyboard className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setShowCrossfadeSettings(true)}
+              className="p-2 rounded-md hover:bg-muted transition-colors"
+              title="Crossfade Settings"
+            >
+              <Settings className="w-5 h-5" />
             </button>
             <button
               onClick={() => setShowSmartPlaylistManager(true)}
@@ -567,6 +578,14 @@ function App() {
             }
           }}
           onClose={() => setShowGlobalHotkeysSettings(false)}
+        />
+      )}
+
+      {/* Crossfade Settings */}
+      {showCrossfadeSettings && (
+        <CrossfadeSettings
+          onClose={() => setShowCrossfadeSettings(false)}
+          onSettingsChange={checkCrossfadeStatus}
         />
       )}
     </div>

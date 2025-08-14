@@ -43,6 +43,7 @@ Odtwarzacz muzyczny zbudowany w Tauri z React, TypeScript, Tailwind CSS i shadcn
 
 #### Nagłówek aplikacji (górny pasek):
 - **⌨️ Keyboard** - Ustawienia globalnych skrótów klawiszowych (Ctrl+G)
+- **⚙️ Settings** - Ustawienia crossfade (płynne przejścia między utworami)
 - **🪄 Wand2** - Zarządzanie inteligentnymi playlistami
 - **📐 Minimize2** - Przełączenie do trybu mini-player (Ctrl+M)
 - **❓ HelpCircle** - Pomoc i skróty klawiszowe (Ctrl+H)
@@ -239,6 +240,7 @@ npm run tauri build
 - [x] **Filtrowanie biblioteki**: Wyszukiwanie i filtrowanie według artysty, gatunku, roku z zaawansowanymi opcjami
 - [x] **Smart playlists**: Automatyczne playlisty na podstawie kryteriów z systemem reguł AND/OR
 - [x] **Global hotkeys**: Systemowe skróty działające poza aplikacją z konfigurowalnymi kombinacjami klawiszy
+- [x] **Crossfade**: Płynne przejścia między utworami z konfigurowalnymi krzywymi i czasem trwania
 
 ### ⌨️ Skróty klawiszowe
 
@@ -273,7 +275,7 @@ npm run tauri build
 - [x] **Global hotkeys**: Systemowe skróty działające poza aplikacją z pełną konfiguracją
 
 ### 🎯 Zaawansowane funkcje (Faza 2)
-- [ ] **Crossfade**: Płynne przejścia między utworami
+- [x] **Crossfade**: Płynne przejścia między utworami
 - [ ] **Gapless playback**: Odtwarzanie bez przerw między utworami
 - [ ] **A-B repeat**: Powtarzanie wybranych fragmentów
 - [ ] **Speed/pitch control**: Zmiana tempa i wysokości bez zmiany drugiego parametru
