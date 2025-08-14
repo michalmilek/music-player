@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { Music, HelpCircle, X, Minimize2, FolderOpen, FolderSearch, Download, Wand2 } from "lucide-react";
+import { Music, HelpCircle, X, Minimize2, FolderOpen, FolderSearch, Download, Wand2, Keyboard } from "lucide-react";
 import { Song, TrackMetadata } from "./types/music";
 import { useAudioPlayer } from "./hooks/useAudioPlayer";
 import { Playlist } from "./components/Playlist";
@@ -15,6 +15,7 @@ import { MiniPlayer } from "./components/MiniPlayer";
 import { MusicLibraryImport } from "./components/MusicLibraryImport";
 import { PlaylistExport } from "./components/PlaylistExport";
 import { SmartPlaylistManager } from "./components/SmartPlaylistManager";
+import { GlobalHotkeysSettings } from "./components/GlobalHotkeysSettings";
 
 function App() {
   const {
@@ -58,6 +59,7 @@ function App() {
   const [showLibraryImport, setShowLibraryImport] = useState(false);
   const [showPlaylistExport, setShowPlaylistExport] = useState(false);
   const [showSmartPlaylistManager, setShowSmartPlaylistManager] = useState(false);
+  const [showGlobalHotkeysSettings, setShowGlobalHotkeysSettings] = useState(false);
   const [skipAmount, setSkipAmount] = useState(10);
 
   // Load skip amount from localStorage
@@ -200,6 +202,13 @@ function App() {
         case 'Escape':
           e.preventDefault();
           setShowHelp(false);
+          setShowGlobalHotkeysSettings(false);
+          break;
+        case 'KeyG':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            setShowGlobalHotkeysSettings(true);
+          }
           break;
       }
     };
@@ -318,6 +327,13 @@ function App() {
             Tauri Music Player
           </h1>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowGlobalHotkeysSettings(true)}
+              className="p-2 rounded-md hover:bg-muted transition-colors"
+              title="Global Hotkeys"
+            >
+              <Keyboard className="w-5 h-5" />
+            </button>
             <button
               onClick={() => setShowSmartPlaylistManager(true)}
               className="p-2 rounded-md hover:bg-muted transition-colors"
@@ -491,7 +507,11 @@ function App() {
                 <kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl + H</kbd>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Close help</span>
+                <span className="text-muted-foreground">Global hotkeys</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl + G</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Close dialogs</span>
                 <kbd className="px-2 py-1 bg-muted rounded text-xs">Esc</kbd>
               </div>
             </div>
@@ -528,6 +548,25 @@ function App() {
           onToggleSmartPlaylist={toggleSmartPlaylist}
           onPlaySmartPlaylist={playSmartPlaylist}
           onClose={() => setShowSmartPlaylistManager(false)}
+        />
+      )}
+
+      {/* Global Hotkeys Settings */}
+      {showGlobalHotkeysSettings && (
+        <GlobalHotkeysSettings
+          audioPlayerActions={{
+            togglePlay,
+            nextSong,
+            previousSong,
+            handleVolumeChange,
+            volume,
+            showWindow: () => {
+              if (window) {
+                window.focus();
+              }
+            }
+          }}
+          onClose={() => setShowGlobalHotkeysSettings(false)}
         />
       )}
     </div>

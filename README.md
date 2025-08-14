@@ -39,6 +39,36 @@ Odtwarzacz muzyczny zbudowany w Tauri z React, TypeScript, Tailwind CSS i shadcn
 
 ## 📱 Interfejs użytkownika
 
+### 🔘 Przyciski i kontrolki
+
+#### Nagłówek aplikacji (górny pasek):
+- **⌨️ Keyboard** - Ustawienia globalnych skrótów klawiszowych (Ctrl+G)
+- **🪄 Wand2** - Zarządzanie inteligentnymi playlistami
+- **📐 Minimize2** - Przełączenie do trybu mini-player (Ctrl+M)
+- **❓ HelpCircle** - Pomoc i skróty klawiszowe (Ctrl+H)
+
+#### Sekcja playlist (lewa strona):
+- **🗑️ Clear** - Wyczyść całą playlistę
+- **📤 Export** - Eksportuj playlistę do pliku (M3U, PLS, JSON)
+- **🔍 Import** - Importuj muzykę z folderu (skanowanie rekursywne)
+- **📁 Add Files** - Dodaj pojedyncze pliki muzyczne
+- **❤️ Heart** - Filtruj playlistę (pokaż tylko ulubione)
+- **⋮⋮ GripVertical** - Przeciągnij i upuść (zmiana kolejności utworów)
+
+#### Kontrolki odtwarzania (dolny pasek):
+- **⏮️ Previous** - Poprzedni utwór (Ctrl+P)
+- **⏯️ Play/Pause** - Odtwórz/pauzuj (Spacja)
+- **⏭️ Next** - Następny utwór (Ctrl+N)
+- **⏪ Skip-** - Przewiń do tyłu o X sekund (← lub Shift+←)
+- **⏩ Skip+** - Przewiń do przodu o X sekund (→ lub Shift+→)
+- **🔁 Repeat modes** - Tryby powtarzania (Linear → Repeat All → Repeat One → Shuffle)
+- **🔊 Volume** - Kontrola głośności (↑/↓, M dla mute)
+
+#### Dla każdego utworu w playliście:
+- **⭐ Stars (1-5)** - Ocena utworu (kliknij gwiazdki)
+- **❤️ Heart** - Dodaj/usuń z ulubionych
+- **🎵 Song info** - Kliknij żeby odtworzyć utwór
+
 ### Główne sekcje aplikacji:
 - **Playlist** (lewa strona): Lista utworów z metadanymi, przyciskami zarządzania
 - **Now Playing** (środek): Okładka albumu z informacjami o utworze
@@ -58,7 +88,40 @@ Odtwarzacz muzyczny zbudowany w Tauri z React, TypeScript, Tailwind CSS i shadcn
 - **Przeciągnij utwory** w playliście żeby zmienić kolejność (pojawi się ⋮⋮ przy hover)
 - **Oceń utwory** klikając gwiazdki (0-5 gwiazdek) - wypełnione gwiazdki dla lepszej widoczności
 - **Dodaj do ulubionych** klikając serce - filtruj playlistę pokazując tylko ulubione
+- **Filtruj bibliotekę** używając paska wyszukiwania i filtrów artysty/gatunku/roku
+- **Twórz inteligentne playlisty** z automatycznym doborem utworów według reguł
+- **Konfiguruj globalne skróty** działające w całym systemie
 - **Wszystkie ustawienia** są automatycznie zapisywane
+
+### 🎭 Funkcje zaawansowane
+
+#### 🔍 Filtrowanie biblioteki:
+- **Wyszukiwanie tekstowe** - szukaj w tytułach, wykonawcach, albumach
+- **Filtr artysty** - wybierz konkretnego wykonawcę z listy
+- **Filtr gatunku** - filtruj według gatunku muzycznego  
+- **Filtr roku** - wybierz rok wydania (sortowane od najnowszych)
+- **Kombinowane filtrowanie** - używaj wielu filtrów jednocześnie
+- **Licznik wyników** - widzisz ile utworów pasuje do kryteriów
+
+#### 🪄 Inteligentne playlisty:
+- **Automatyczne tworzenie** - playlisty się aktualizują gdy dodasz nowe utwory
+- **System reguł** - twórz warunki AND/OR dla precyzyjnego doboru
+- **Dostępne kryteria**:
+  - Tekst (tytuł, artysta, album, gatunek) - zawiera, równa się, nie zawiera
+  - Liczby (rok, czas trwania, rating, liczba odtworzeń) - większe, mniejsze, równe
+  - Boolean (czy ulubiony) - tak/nie
+  - Data (ostatnie odtworzenie) - w ostatnich X dniach/tygodniach/miesiącach
+- **Sortowanie i limity** - uporządkuj wyniki i ogranicz liczbę utworów
+- **Gotowe szablony** - Moje ulubione, Wysoko ocenione, Niedawno dodane, Długie utwory
+- **Podgląd na żywo** - zobacz wyniki przed zapisaniem playlisty
+
+#### ⌨️ Globalne skróty klawiszowe:
+- **Systemowe działanie** - działają nawet gdy aplikacja jest zminimalizowana
+- **Pełna konfiguracja** - zmień dowolny skrót na własny
+- **Podpowiedzi klawiszy** - lista dostępnych kombinacji podczas edycji
+- **Klawsze multimedialne** - automatyczne rozpoznawanie klawiszy MediaPlayPause itp.
+- **Bezkonfliktowe** - automatyczne sprawdzanie zajętych skrótów
+- **Reset do domyślnych** - jednym kliknięciem przywróć fabryczne ustawienia
 
 ## 🚀 Rozpoczęcie pracy
 
@@ -173,8 +236,13 @@ npm run tauri build
 - [x] **Drag & Drop playlist**: Przeciągnij i upuść utwory żeby zmienić kolejność z wizualnymi wskazaniami
 - [x] **System oceniania**: 5-gwiazdkowy rating system z wypełnionymi gwiazdkami i zapisem do localStorage
 - [x] **Ulubione utwory**: Favoriting z przyciskiem serca, filtrowaniem playlisty i persistencją
+- [x] **Filtrowanie biblioteki**: Wyszukiwanie i filtrowanie według artysty, gatunku, roku z zaawansowanymi opcjami
+- [x] **Smart playlists**: Automatyczne playlisty na podstawie kryteriów z systemem reguł AND/OR
+- [x] **Global hotkeys**: Systemowe skróty działające poza aplikacją z konfigurowalnymi kombinacjami klawiszy
 
 ### ⌨️ Skróty klawiszowe
+
+#### Lokalne skróty (w aplikacji):
 - **Spacja** - Play/Pause
 - **←/→** - Skip 10s backward/forward  
 - **Shift + ←/→** - Skip custom amount backward/forward
@@ -183,17 +251,26 @@ npm run tauri build
 - **Ctrl + P/N** - Previous/Next song
 - **Ctrl + M** - Toggle mini player mode
 - **Ctrl + H** - Show help
-- **Esc** - Close help
+- **Ctrl + G** - Global hotkeys settings
+- **Esc** - Close dialogs
+
+#### Globalne skróty (systemowe - konfigurowalne):
+- **MediaPlayPause** - Play/Pause (domyślnie)
+- **MediaNextTrack** - Next song (domyślnie)
+- **MediaPreviousTrack** - Previous song (domyślnie)
+- **VolumeUp/VolumeDown** - Volume control (domyślnie)
+- **VolumeMute** - Mute/Unmute (domyślnie)
+- **CommandOrControl+Shift+M** - Show window (domyślnie)
 
 ## 🗺️ Roadmap - Plan rozwoju
 
-### 🚧 Następne funkcje (Faza 1)
+### ✅ Ukończone funkcje (Faza 1)
 - [x] **Tryby odtwarzania**: Repeat (single/all), Shuffle, Linear
 - [x] **System oceniania**: 5-gwiazdkowy rating system dla utworów
 - [x] **Ulubione utwory**: Favoriting z szybkim dostępem
-- [ ] **Filtrowanie biblioteki**: Wyszukiwanie i filtrowanie według artysty, gatunku, roku
-- [ ] **Smart playlists**: Automatyczne playlisty na podstawie kryteriów
-- [ ] **Global hotkeys**: Systemowe skróty działające poza aplikacją
+- [x] **Filtrowanie biblioteki**: Wyszukiwanie i filtrowanie według artysty, gatunku, roku
+- [x] **Smart playlists**: Automatyczne playlisty na podstawie kryteriów z systemem reguł
+- [x] **Global hotkeys**: Systemowe skróty działające poza aplikacją z pełną konfiguracją
 
 ### 🎯 Zaawansowane funkcje (Faza 2)
 - [ ] **Crossfade**: Płynne przejścia między utworami
@@ -247,19 +324,26 @@ npm run tauri build
 
 ## 📊 Priorytety rozwoju
 
-**Wysoki priorytet:**
+**✅ Ukończone (Faza 1):**
 - ~~Tryby odtwarzania (repeat/shuffle)~~ ✅ Zrobione
 - ~~System oceniania i ulubione~~ ✅ Zrobione  
-- Global hotkeys
-- Filtrowanie i wyszukiwanie
+- ~~Global hotkeys~~ ✅ Zrobione
+- ~~Filtrowanie i wyszukiwanie~~ ✅ Zrobione
+- ~~Smart playlists~~ ✅ Zrobione
 
-**Średni priorytet:**
+**🚧 Wysoki priorytet (Faza 2):**
 - Crossfade i gapless playback
-- Audio effects
-- Last.fm integration
-- System tray
+- A-B repeat i speed/pitch control
+- Audio effects (reverb, echo)
+- System tray integration
 
-**Niski priorytet:**
+**📋 Średni priorytet (Faza 3):**
+- Last.fm integration
+- Discord Rich Presence
+- Waveform display
+- Tag editor
+
+**🔮 Niski priorytet (Faza 4+):**
 - Cloud sync
 - Mobile app
 - AI features
